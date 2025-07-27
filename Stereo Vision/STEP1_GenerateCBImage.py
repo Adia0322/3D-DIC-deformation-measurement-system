@@ -5,8 +5,8 @@ import cv2 as cv
 import glob
 import Config as CF
 import Config_user as CF_user
-from function.image_process import rotate_image
-from function.image_process import delete_old_image
+from function.image_processing import rotate_image
+from function.image_processing import delete_old_image
 
 ## Delete old images
 left_jpg_files = glob.glob(f"{CF.IMAGE_STEREO_LEFT_DIR}*.jpg")
