@@ -4,6 +4,7 @@ Stereo Camera Calibration
 import numpy as np
 import cv2 as cv
 import glob
+import os
 import Config as CF
 import Config_user as CF_user
 
@@ -25,8 +26,10 @@ objpoints = [] # 3d point in real world space
 imgpointsL = [] # 2d points in image plane.
 imgpointsR = [] # 2d points in image plane.
 
-image_Left = sorted(glob.glob(f"{CF.IMAGE_STEREO_LEFT_DIR}*.jpg"))
-image_Right = sorted(glob.glob(f"{CF.IMAGE_STEREO_RIGHT_DIR}*.jpg"))
+os.makedirs(CF.IMAGE_CAL_LEFT_DIR, exist_ok=True)
+os.makedirs(CF.IMAGE_CAL_RIGHT_DIR, exist_ok=True)
+image_Left = sorted(glob.glob(f"{CF.IMAGE_CAL_LEFT_DIR}*.jpg"))
+image_Right = sorted(glob.glob(f"{CF.IMAGE_CAL_RIGHT_DIR}*.jpg"))
 
 for imgLeft, imgRight in zip(image_Left, image_Right): # zip: 將2組array中對應的元素打包成一個位組，最後傳回一個列表。
     imgL = cv.imread(imgLeft) # 將影像讀入儲存成array
@@ -72,7 +75,7 @@ retR, CameraMatrixR, distR, rvecsR, tvecsR = cv.calibrateCamera(objpoints, imgpo
 flags = 0
 flags |= cv.CALIB_FIX_INTRINSIC
 # only Rot, Trns, Emat and Fmat are calculated.
-criteria_stereo = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, 100, 0.0001)
+criteria_stereo = (cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER, CF_user.CAL_ITERATION_TIMES, CF_user.CAL_ACCURACY)
 # This step is performed to transformation between the two cameras and calculate Essential and Fundamenatl matrix
 retStereo, CameraMatrixL, distL, CameraMatrixR, distR, rot, trans, essentialMatrix, fundamentalMatrix = cv.stereoCalibrate(objpoints, imgpointsL, imgpointsR, CameraMatrixL, distL, CameraMatrixR, distR, grayL.shape[::-1], criteria_stereo, flags)
 

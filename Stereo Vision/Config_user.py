@@ -4,14 +4,19 @@
 
 
 ## Enable
-# 手動設定焦距: 1:YES 0:NO
+# focal: 1:YES 0:NO
 CAM_MANUAL_FOCAL_EN = 1
+CAM_BUFFERSIZE_EN = 0
+CAM_AUTO_FOCAL_EN = 0
+CAM_AUTO_WB_EN = 0
+# test mode (0: in-plane, 1:out-of-plane)
+TEST_MODE_EN = 0
 
 ## camera parameters
-# 焦距大小
+# focal
 CAM1_FOCAL = 70
 CAM2_FOCAL = 70
-# 相機編號
+# camera index
 CAM1_ID = 1
 CAM2_ID = 0
 
@@ -23,3 +28,6 @@ CAL_ITERATION_TIMES = 100
 CAL_ACCURACY = 0.0001
 
 CAL_SQUARE_SIZE = 8 # unit: mm
+
+## TEST SETTING
+TEST_LOAD = 5
