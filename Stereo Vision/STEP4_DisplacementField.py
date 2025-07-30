@@ -4,6 +4,8 @@ print("\n<< Stereo_DIC_PSO_ICGN >>")
 import numpy as np
 import cv2 as cv
 import time
+import Config as CF
+import Config_user as CF_user
 import PSO_ICGN_1B2B
 import PSO_ICGN_1B1A
 import PSO_ICGN_2B2A
@@ -13,11 +15,9 @@ import CubicCoef_2B2A
 import Hessian
 import Image_Calibration as Img_cal    
 import Points2Plane
-
-# displacement(image)
-disRigid = str(0.1)
-# weights(image)
-kg = 5
+from function.image_processing import rotate_image
+from function.image_processing import click_event_CAM1_BEF
+from function.image_processing import click_event_CAM2_BEF
 
 # folder address
 folder_dir = 'Target20230901-1'
@@ -28,9 +28,6 @@ if plane_flag == 0:
     plane = str('in')
 else:
     plane = str('out')
-
-# image rectification? no:0 yes:1
-rec_flag = 1
 
 # image rotation: no:0 yes:1
 angle_flag = 0
@@ -43,40 +40,21 @@ v1c2 = 168
 
 """ ======== images ====== """
 # case1
-img_1B_adress = './images/'+folder_dir+'/'+str(plane)+'/camera1/cal_0_'+\
-                  str(kg)+'kg_0cm.image1.jpg'
-img_2B_adress = './images/'+folder_dir+'/'+str(plane)+'/camera2/cal_0_'+\
-                  str(kg)+'kg_0cm.image1.jpg'
+img_1B_adress = './image/'+folder_dir+'/'+str(plane)+'/camera1/cal_0_'+\
+                  str(CF_user.TEST_LOAD)+'kg_0cm.image1.jpg'
+img_2B_adress = './image/'+folder_dir+'/'+str(plane)+'/camera2/cal_0_'+\
+                  str(CF_user.TEST_LOAD)+'kg_0cm.image1.jpg'
 
 
 img_1B = cv.imread(str(img_1B_adress))
 img_2B = cv.imread(str(img_2B_adress))
 
-
-def rotate(image, angle, center=None, scale=1.0):
-    # 獲取圖片尺寸
-    (h, w) = image.shape[:2]
- 
-    # 若未指定旋轉中心，則將圖像中心設定為旋轉中心
-    if center is None:
-        center = (w / 2, h / 2)
- 
-    # 執行旋轉
-    M = cv.getRotationMatrix2D(center, angle, scale)
-    rotated = cv.warpAffine(image, M, (w, h))
-
-    # 傳回旋轉後的圖像
-    return rotated
-
-
-# image rotation
-if angle_flag == 1:
-    img_1B = rotate(img_1B,-90)
-    img_2B = rotate(img_2B,90)
-
+if CF_user.TEST_ROTATE_IMG_EN == 1:
+    img_1B = rotate_image(img_1B, -90)
+    img_2B = rotate_image(img_2B, 90)
 
 # image rectification
-if rec_flag == 1:
+if CF_user.TEST_REC_IMG_EN == 1:
     img_1B_new, img_2B_new = Img_cal.undistortRectify(img_1B, img_2B)
 else:
     img_1B_new = img_1B
@@ -89,7 +67,6 @@ cv.imwrite('thesis_img/img_2B_new_thesis.jpg', img_2B_new)
 img_1B_new_temp = img_1B_new
 img_2B_new_temp = img_2B_new
 
-""" ============== choose the point you want ================ """
 # ============ Select first point in left image ================
 cv.putText(img_1B_new_temp, 'set a reference point on img_1B', (20, 60),\
             cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
@@ -97,22 +74,12 @@ cv.namedWindow("img_1B_new_temp", cv.WINDOW_NORMAL)
 cv.namedWindow("img_2B_new_temp", cv.WINDOW_NORMAL)
 cv.imshow("img_1B_new_temp", img_1B_new_temp)
 cv.imshow("img_2B_new_temp", img_2B_new_temp)
-def click_event(event, x, y, flags, params):
-    if event == cv.EVENT_LBUTTONDOWN:
-        global u1, v1
-        print("點選的座標:",x, ' ', y)
-        font = cv.FONT_HERSHEY_SIMPLEX
-        cv.putText(img_1B_new_temp, str(x) + ',' +
-                    str(y), (x,y), font,
-                    1, (0, 255, 0), 2) 
-        cv.imshow('img_1B_new_temp', img_1B_new_temp)       
-        u1 = y
-        v1 = x
+
 print('Please set a reference point')
-cv.setMouseCallback('img_1B_new_temp', click_event)
+row_1B, col_1B = None, None 
+cv.setMouseCallback('img_1B_new_temp', click_event_CAM1_BEF, img_1B_new_temp)
 cv.waitKey(0) 
 cv.destroyAllWindows() 
-
 
 # ============ Select corresponding points in right image ===========
 cv.putText(img_2B_new_temp, 'set a corresponding point on img_2B', (20, 60),\
@@ -121,19 +88,9 @@ cv.namedWindow("img_1B_new_temp", cv.WINDOW_NORMAL)
 cv.namedWindow("img_2B_new_temp", cv.WINDOW_NORMAL)
 cv.imshow("img_1B_new_temp", img_1B_new_temp)
 cv.imshow("img_2B_new_temp", img_2B_new_temp)
-def click_event2(event, x, y, flags, params):
-    if event == cv.EVENT_LBUTTONDOWN:
-        global u1c2, v1c2
-        print("點選的座標:",x, ' ', y)
-        font = cv.FONT_HERSHEY_SIMPLEX
-        cv.putText(img_2B_new_temp, str(x) + ',' +
-                    str(y), (x,y), font,
-                    1, (0, 255, 0), 2) 
-        cv.imshow('img_2B_new_temp', img_2B_new_temp)
-        u1c2 = y
-        v1c2 = x
+
 print('Please choose a reference point')
-cv.setMouseCallback('img_2B_new_temp', click_event2)
+cv.setMouseCallback('img_2B_new_temp', click_event_CAM2_BEF, img_2B_new_temp)
 cv.waitKey(0) 
 cv.destroyAllWindows() 
 
@@ -145,14 +102,6 @@ Q = cv_file.getNode('Q').mat()
 
 # Reload the image (to remove the coordinates left by clicking on the image).
 img_1B = cv.imread(str(img_1B_adress))
-
-# image rectification
-if rec_flag == 1:
-    img_1B_new, img_2B_new = Img_cal.undistortRectify(img_1B, img_2B)
-else:
-    img_1B_new = img_1B
-    img_2B_new = img_2B
-        
 
 """ =============== parameters ==============="""
 # Set the number of analysis points.
@@ -334,20 +283,20 @@ for ImgNum in range(1,2,1):
     import CubicCoef_1B2B
     # 讀入影像
     img_1A_adress = './images/'+folder_dir+'/'+str(plane)+'/camera1/cal_'+\
-                      str(kg)+'_'+str(kg)+'kg_0cm.image'+str(ImgNum)+'.jpg'
+                      str(CF_user.TEST_LOAD)+'_'+str(CF_user.TEST_LOAD)+'kg_0cm.image'+str(ImgNum)+'.jpg'
     img_2A_adress = './images/'+folder_dir+'/'+str(plane)+'/camera2/cal_'+\
-                      str(kg)+'_'+str(kg)+'kg_0cm.image'+str(ImgNum)+'.jpg'
+                      str(CF_user.TEST_LOAD)+'_'+str(CF_user.TEST_LOAD)+'kg_0cm.image'+str(ImgNum)+'.jpg'
     
     img_1A = cv.imread(str(img_1A_adress))
     img_2A = cv.imread(str(img_2A_adress))
     
     # 旋轉影像
-    if angle_flag == 1:
-        img_1A = rotate(img_1A,-90)
-        img_2A = rotate(img_2A,90)
+    if CF_user.TEST_ROTATE_IMG_EN == 1:
+        img_1A = rotate_image(img_1A, -90)
+        img_2A = rotate_image(img_2A, 90)
     
     # 影像校正
-    if rec_flag == 1:
+    if CF_user.TEST_REC_IMG_EN == 1:
         img_1A_new, img_2A_new = Img_cal.undistortRectify(img_1A, img_2A)
     else:
         img_1A_new = img_1A

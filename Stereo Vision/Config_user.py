@@ -11,6 +11,8 @@ CAM_AUTO_FOCAL_EN = 0
 CAM_AUTO_WB_EN = 0
 # test mode (0: in-plane, 1:out-of-plane)
 TEST_MODE_EN = 0
+TEST_ROTATE_IMG_EN = 1
+TEST_REC_IMG_EN = 1
 
 ## camera parameters
 # focal
@@ -31,3 +33,5 @@ CAL_SQUARE_SIZE = 8 # unit: mm
 
 ## TEST SETTING
 TEST_LOAD = 5
+
+
