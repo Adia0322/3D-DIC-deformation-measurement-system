@@ -8,7 +8,7 @@ Created on Mon Feb 14 16:32:26 2022
 """
 
 def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
-                   Size_1B2B, Size_2B2A, Scan_1B2B, H_inv_1B2B,\
+                   CF_user.TEST_SUBSET_SIZE_2B2A, CF_user.TEST_SUBSET_SIZE_2B2A, Scan_1B2B, H_inv_1B2B,\
                    J_1B2B, Cubic_coef_1B2B, Trans1B2B):
     import numpy as np
     from ctypes import cdll, c_int, c_double, POINTER
@@ -18,7 +18,7 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     # 取得圖片尺寸
     #ROW, COL = img_1B_GRAY.shape # 注意 ROW,COL不會存到變數...
     # 設定子矩陣大小(邊長) 需要是奇數!!
-    Size = Size_1B2B
+    Size = CF_user.TEST_SUBSET_SIZE_2B2A
     # 設定掃瞄方陣之邊長
     Scan = Scan_1B2B 
     # 設定插值方陣之邊長 (在主程式已經有算了，為了不再增加函式變數因此重算一遍)
@@ -186,7 +186,7 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     
     """ Calculate new gray value and image gradient of C2_B image: for 2B2A """
     # 計算小數座標之灰階值，並以SOBEL計算影像梯度(image gradient)
-    Size_TEMP = Size_2B2A + 2 # No value in boundary, so we allocated 2 more elements in x, y direction,...
+    Size_TEMP = CF_user.TEST_SUBSET_SIZE_2B2A + 2 # No value in boundary, so we allocated 2 more elements in x, y direction,...
     Len_TEMP = int(0.5*(Size_TEMP-1)) # ...make sure we have (Size)*(Size) size matrix.
     warp_aft_coef = np.array([(1, 0, U), (0, 1, V), (0, 0, 1)], dtype=float)
     Gvalue_TEMP = np.zeros(((Size_TEMP),(Size_TEMP)), dtype=float)

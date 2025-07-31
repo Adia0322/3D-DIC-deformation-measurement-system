@@ -8,7 +8,7 @@ Created on Mon Feb 14 16:32:26 2022
 """
 
 def Calculate_2B2A(img_2B, img_2A, C2_B_x, C2_B_y,\
-                   Size_2B2A, Scan_2B2A, H_inv_2B2A, J_2B2A,\
+                   CF_user.TEST_SUBSET_SIZE_2B2A, Scan_2B2A, H_inv_2B2A, J_2B2A,\
                    Cubic_coef_2B2A, img_bef_sub):
     import numpy as np
     from ctypes import cdll, c_int, c_double, POINTER
@@ -16,7 +16,7 @@ def Calculate_2B2A(img_2B, img_2A, C2_B_x, C2_B_y,\
     # 取得圖片尺寸
     #ROW, COL = img_1B.shape # 注意 ROW,COL不會存到變數...
     # 設定子矩陣大小(邊長) 需要是奇數!!
-    Size = Size_2B2A
+    Size = CF_user.TEST_SUBSET_SIZE_2B2A
     # 設定掃瞄範圍 (目標點上下左右移動距離) (scan只須在c語言內設定即可)
     #Scan = Scan_2B2A
     # 設定插值方陣之邊長 (在主程式已經有算了，為了不再增加函式變數因此重算一遍)

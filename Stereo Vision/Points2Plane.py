@@ -10,19 +10,19 @@ from sympy import symbols, solve
 # ========= ( AX = B )===========
 
 # (6,6,0):x、(6,6,1):y、(6,6,2):z、
-def normalVector(coorZone, SL):
+def normalVector(coorZone, side_len):
     # 
     A = []
-    for i in range(0,SL,1):
-        for j in range(0,SL,1):
+    for i in range(0,side_len,1):
+        for j in range(0,side_len,1):
             A = np.append(A,coorZone[i][j][0]) #coor_x
             A = np.append(A,coorZone[i][j][1]) #coor_y
             A = np.append(A,coorZone[i][j][2]) #coor_z
 
-    # 將一維陣列coefMatrix轉為SL*SL*3矩陣
-    A = A.reshape(SL*SL,3)
+    # 將一維陣列coefMatrix轉為SL*side_len*3矩陣
+    A = A.reshape(side_len*side_len,3)
     # B matrix
-    B = np.ones(SL*SL) # column vector
+    B = np.ones(side_len*side_len) # column vector
     # Solve X by least square method
     X = np.linalg.lstsq(A, B, rcond=None)
     
