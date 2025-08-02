@@ -10,9 +10,7 @@ import Config_user as CF_user
 import PSO_ICGN_1B2B
 import PSO_ICGN_1B1A
 import PSO_ICGN_2B2A
-import CubicCoef_1B2B_all
-import CubicCoef_1B1A
-import CubicCoef_2B2A
+from function.interpolation import get_cubic_coef_1B2B, get_cubic_coef_1B1A, get_cubic_coef_2B2A
 import Hessian
 import Image_Calibration as Img_cal    
 import Points2Plane
@@ -21,7 +19,7 @@ from function.click_tool import click_recorder
 
 print(f"pwd: {os.getcwd()}")
 print(f"WORKSPACE: {CF.WORKSPACE}")
-print(r"C:\Users\User\Documents\Code\3D-DIC_measurement_system\Stereo Vision\stereoMap.xml")
+
 # folder address
 #CF_user.TEST_IMG_DIR = 'Target20230901-1'
 
@@ -135,8 +133,7 @@ Sobel_1B_v = cv.Sobel(img_1B_rec_gray, cv.CV_64F, 1, 0)*0.125 # x方向
 # 填充額外數值以供插值係數計算: 2B_full
 img_2B_rec_gray_pad = np.pad(img_2B_rec_gray,[(1,2),(1,2)], mode = 'edge')
 row_2B, col_2B = img_2B_rec_gray.shape
-CubicCoef_1B2B_ALL, Cubic_Xinv =\
-    CubicCoef_1B2B_all.CalculateALL(img_2B_rec_gray_pad, row_2B, col_2B)
+CubicCoef_1B2B_ALL, Cubic_Xinv = get_cubic_coef_1B2B(img_2B_rec_gray_pad, row_2B, col_2B)
 
 # storage area
 C1B_points = np.zeros((side_len,side_len,2), dtype=int)
@@ -304,8 +301,7 @@ for img_idx in range(1,2,1):
             # 插值係數1B1A
             Gvalue_1B1A = img_1A_rec_gray[int(C1_B_y)-Length-1:int(C1_B_y)+Length+3,\
                                           int(C1_B_x)-Length-1:int(C1_B_x)+Length+3] 
-            Cubic_coef_1B1A =\
-                CubicCoef_1B1A.Calculate(Cubic_Xinv, Length, Gvalue_1B1A)
+            Cubic_coef_1B1A = get_cubic_coef_1B1A(Cubic_Xinv, Length, Gvalue_1B1A)
             # H, J
             H_inv_1B1A[:][:] = H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_1B1A[:][:][:] = J1B1A_all[P+side_len_half][L+side_len_half][:][:][:]
@@ -330,8 +326,7 @@ for img_idx in range(1,2,1):
             # 插值係數2B2A      
             Gvalue_2B2A = img_2A_rec_gray[int(C2_B_y)-Length-1:int(C2_B_y)+Length+3,\
                                           int(C2_B_x)-Length-1:int(C2_B_x)+Length+3] 
-            Cubic_coef_2B2A =\
-                CubicCoef_2B2A.Calculate(Cubic_Xinv, Length, Gvalue_2B2A)           
+            Cubic_coef_2B2A = get_cubic_coef_2B2A(Cubic_Xinv, Length, Gvalue_2B2A)           
             # H, J
             H_inv_2B2A[:][:] = H2B2A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_2B2A[:][:][:] = J2B2A_all[P+side_len_half][L+side_len_half][:][:][:]         

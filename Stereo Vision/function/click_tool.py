@@ -1,5 +1,4 @@
 import cv2 as cv
-import os
 
 class click_recorder:
     def __init__(self):
