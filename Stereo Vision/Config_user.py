@@ -2,13 +2,15 @@
 
 
 
-
 ## Enable
 # focal: 1:YES 0:NO
-CAM_MANUAL_FOCAL_EN = 1
 CAM_BUFFERSIZE_EN = 0
 CAM_AUTO_FOCAL_EN = 0
 CAM_AUTO_WB_EN = 0
+
+# STEP3 EN
+
+
 # test mode (0: in-plane, 1:out-of-plane)
 TEST_MODE_EN = 0
 TEST_ROTATE_IMG_EN = 1
@@ -27,7 +29,10 @@ TEST_SCAN_SIZE_2B2A = 31
 #TEST_SHIFT = 
 TEST_GAUSSIANBLUR_EN = 0
 
-
+# CAPTURE IMAGE
+LOAD_MIN = 0
+LOAD_CUR = 0
+LOAD_MAX = 5
 
 
 ## camera parameters
@@ -47,7 +52,5 @@ CAL_ACCURACY = 0.0001
 
 CAL_SQUARE_SIZE = 8 # unit: mm
 
-## TEST SETTING
-TEST_LOAD = 5
 
 

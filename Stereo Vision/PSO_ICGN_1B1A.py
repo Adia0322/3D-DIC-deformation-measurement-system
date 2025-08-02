@@ -7,9 +7,11 @@ Created on Mon Feb 14 16:32:26 2022
 注意: 不同圖片尺寸需要在c程式裡修改 img_cloumn 的大小 !!
 """
 
-def Calculate_1B1A(img_1B, img_1A, C1_B_x, C1_B_y,\
-                   CF_user.TEST_SUBSET_SIZE_1B1A, Scan_1B1A, H_inv_1B1A, J_1B1A,\
-                   Cubic_coef_1B1A):
+def Calculate_1B1A(img_1B, img_1A,\
+                    C1_B_x, C1_B_y,\
+                    TEST_SUBSET_SIZE_1B1A,\
+                    H_inv_1B1A, J_1B1A,\
+                    Cubic_coef_1B1A):
     import numpy as np
     import time
     from ctypes import cdll, c_int, c_double, POINTER
@@ -19,9 +21,9 @@ def Calculate_1B1A(img_1B, img_1A, C1_B_x, C1_B_y,\
     # 取得圖片尺寸
     #ROW, COL = img_1B.shape # 注意 ROW,COL不會存到變數...
     # 設定子矩陣大小(邊長) 需要是奇數!!
-    Size = CF_user.TEST_SUBSET_SIZE_1B1A
+    Size = TEST_SUBSET_SIZE_1B1A
     # 設定掃瞄範圍 (目標點上下左右移動距離) (scan只須在c語言內設定即可)
-    #Scan = Scan_1B1A
+    #Scan = TEST_SCAN_SIZE_1B1A
     # 設定插值方陣之邊長 (在主程式已經有算了，為了不再增加函式變數因此重算一遍)
     #Length = int(0.5*(Size-1)+0.5*(Scan-1))
     # Hlaf length of subset

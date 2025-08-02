@@ -8,8 +8,8 @@ Created on Mon Feb 14 16:32:26 2022
 """
 
 def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
-                   CF_user.TEST_SUBSET_SIZE_2B2A, CF_user.TEST_SUBSET_SIZE_2B2A, Scan_1B2B, H_inv_1B2B,\
-                   J_1B2B, Cubic_coef_1B2B, Trans1B2B):
+                   TEST_SUBSET_SIZE_2B2A, TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
+                   J_1B2B, Cubic_coef_1B2B, translate_1B2B):
     import numpy as np
     from ctypes import cdll, c_int, c_double, POINTER
     import Bicubic
@@ -18,9 +18,9 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     # 取得圖片尺寸
     #ROW, COL = img_1B_GRAY.shape # 注意 ROW,COL不會存到變數...
     # 設定子矩陣大小(邊長) 需要是奇數!!
-    Size = CF_user.TEST_SUBSET_SIZE_2B2A
+    Size = TEST_SUBSET_SIZE_2B2A
     # 設定掃瞄方陣之邊長
-    Scan = Scan_1B2B 
+    Scan = TEST_SCAN_SIZE_1B2B 
     # 設定插值方陣之邊長 (在主程式已經有算了，為了不再增加函式變數因此重算一遍)
     Length = int(0.5*(Size-1)+0.5*(Scan-1))
     # 子集合之半邊長
@@ -35,7 +35,7 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     # 係數index、CoefValue
     CoefValue = np.zeros((2,), dtype=float)
     # 所選取目標點的位置 
-    Object_point = np.array((C1_B_y,C1_B_x-Trans1B2B), dtype=int)
+    Object_point = np.array((C1_B_y,C1_B_x-translate_1B2B), dtype=int)
     # 預先在影像裡搜尋起點平移一個距離Trans1B2B: 以利快速搜尋目標點
 
     # 將 img_1B_sub 轉為int32型態 (不確定需不需要?!!)
@@ -182,11 +182,11 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     U = warp_aft_coef[0][2] # 垂直
     V = warp_aft_coef[1][2] # 水平
     C2_B_y = U + C1_B_y
-    C2_B_x = V + C1_B_x - Trans1B2B
+    C2_B_x = V + C1_B_x - translate_1B2B
     
     """ Calculate new gray value and image gradient of C2_B image: for 2B2A """
     # 計算小數座標之灰階值，並以SOBEL計算影像梯度(image gradient)
-    Size_TEMP = CF_user.TEST_SUBSET_SIZE_2B2A + 2 # No value in boundary, so we allocated 2 more elements in x, y direction,...
+    Size_TEMP = TEST_SUBSET_SIZE_2B2A + 2 # No value in boundary, so we allocated 2 more elements in x, y direction,...
     Len_TEMP = int(0.5*(Size_TEMP-1)) # ...make sure we have (Size)*(Size) size matrix.
     warp_aft_coef = np.array([(1, 0, U), (0, 1, V), (0, 0, 1)], dtype=float)
     Gvalue_TEMP = np.zeros(((Size_TEMP),(Size_TEMP)), dtype=float)

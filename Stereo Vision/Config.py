@@ -2,7 +2,7 @@
 import os
 import Config_user as CF_user
 cwd = os.getcwd()
-WORKSPACE = cwd
+WORKSPACE = os.path.join(cwd, "Stereo Vision")
 IMAGE_DIR = os.path.join(WORKSPACE, "image")
 IMAGE_CAL_DIR = os.path.join(WORKSPACE, "image", "CAL")
 IMAGE_CAL_LEFT_DIR = os.path.join(WORKSPACE, "image", "CAL", "StereoLeft")

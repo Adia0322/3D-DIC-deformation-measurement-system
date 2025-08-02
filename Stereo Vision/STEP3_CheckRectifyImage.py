@@ -5,7 +5,7 @@ Stereo Vision
     1.相機對應編號
     
 手動影像存檔位址:
-    ./images/Target/camera1/
+    ./images/Target/cam1/
 """
 import cv2 as cv
 import Config as CF
@@ -33,22 +33,27 @@ stereoMapR_y = cv_file.getNode('stereoMapR_y').mat()
 cap_left =  cv.VideoCapture(cam_index_left, cv.CAP_DSHOW)
 cap_right = cv.VideoCapture(cam_index_right, cv.CAP_DSHOW)                    
 
-# close auto setting
-# cap_left.set(21,0)
-# cap_right.set(21,0)
-# cap_left.set(39,0)
-# cap_right.set(39,0)
-# 手動設定相機焦距(若相機無自動對焦) cv2.CAP_PROP_FOCUS
-if CF_user.CAM_MANUAL_FOCAL_EN == 1:
-    cap_left.set(cv.CAP_PROP_FOCUS,CF_user.CAM1_FOCAL)
-    cap_right.set(cv.CAP_PROP_FOCUS,CF_user.CAM2_FOCAL)
+if CF_user.CAM_BUFFERSIZE_EN:
+    cap_left.set(cv.CAP_PROP_BUFFERSIZE,0)
+    cap_right.set(cv.CAP_PROP_BUFFERSIZE,0)
+# white balance
+if CF_user.CAM_AUTO_WB_EN:
+    cap_left.set(cv.CAP_PROP_AUTO_WB,0)
+    cap_right.set(cv.CAP_PROP_AUTO_WB,0)
+#  auto focus
+if CF_user.CAM_AUTO_FOCAL_EN:
+    cap_left.set(cv.CAP_PROP_AUTOFOCUS,0)
+    cap_right.set(cv.CAP_PROP_AUTOFOCUS,0)
+else:
+    cap_left.set(cv.CAP_PROP_FOCUS, CF_user.CAM1_FOCAL)
+    cap_right.set(cv.CAP_PROP_FOCUS, CF_user.CAM2_FOCAL)
 
 cv.namedWindow("frame left", cv.WINDOW_NORMAL)
 cv.namedWindow("frame right", cv.WINDOW_NORMAL)
 
 # origin text corrfinate in img_C1_new (not important)
-u1 = -10
-v1 = -10
+row_c1 = -10
+col_c1 = -10
 
 cv.setMouseCallback('frame left', click_event)
 while(cap_right.isOpened() and cap_left.isOpened()):
@@ -62,36 +67,41 @@ while(cap_right.isOpened() and cap_left.isOpened()):
     frame_left_rec = cv.remap(frame_left_ori, stereoMapL_x, stereoMapL_y, cv.INTER_LANCZOS4, cv.BORDER_CONSTANT, 0)
     frame_right_rec = cv.remap(frame_right_ori, stereoMapR_x, stereoMapR_y, cv.INTER_LANCZOS4, cv.BORDER_CONSTANT, 0)
     
-    cv.putText(frame_left_rec, str(v1) + ',' +str(u1), (v1+10, u1-10),\
+    cv.putText(frame_left_rec, str(col_c1) + ',' +str(row_c1), (col_c1+10, row_c1-10),\
                cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-    frame_left_rec = cv.circle(frame_left_rec, (v1, u1), 5, (0, 255, 255), 1)
+    frame_left_rec = cv.circle(frame_left_rec, (col_c1, row_c1), 5, (0, 255, 255), 1)
     
     cv.imshow("frame left", frame_left_rec)
     cv.imshow("frame right", frame_right_rec) 
 
     k = cv.waitKey(5)
     # ESC: break
-    if k==27 or img_cnt==11: 
+    if k==27 or img_cnt==11:
         break
     
     # s: save image
     elif k == ord('s'):
         if CF_user.TEST_MODE_EN == 0:
-            cv.imwrite(f"{CF.IMAGE_TARGET_IN_CAM1_DIR}/{CF_user.TEST_LOAD}kg_image" + str(img_cnt) + '.jpg', frame_left_ori)
-            cv.imwrite(f"{CF.IMAGE_TARGET_IN_CAM2_DIR}/{CF_user.TEST_LOAD}kg_image" + str(img_cnt) + '.jpg', frame_right_ori)
-            print(f"{CF_user.TEST_LOAD}kg_image" + str(img_cnt) + ".jpg" + " save!")
+            save_path_1 = f"{CF.IMAGE_TARGET_IN_CAM1_DIR}/{CF_user.LOAD_CUR}_{CF_user.LOAD_MAX}kg_image" + str(img_cnt) + '.jpg'
+            save_path_2 = f"{CF.IMAGE_TARGET_IN_CAM2_DIR}/{CF_user.LOAD_CUR}_{CF_user.LOAD_MAX}kg_image" + str(img_cnt) + '.jpg'
+            cv.imwrite(save_path_1, frame_left_ori)
+            cv.imwrite(save_path_2, frame_right_ori)
+            print(f'save: {save_path_1}')
+            print(f'save: {save_path_2}\n')
             img_cnt += 1
         elif CF_user.TEST_MODE_EN == 1:
-            cv.imwrite(f"{CF.IMAGE_TARGET_OUT_CAM1_DIR}/{CF_user.TEST_LOAD}kg_image" + str(img_cnt) + '.jpg', frame_left_ori)
-            cv.imwrite(f"{CF.IMAGE_TARGET_OUT_CAM2_DIR}/{CF_user.TEST_LOAD}kg_image" + str(img_cnt) + '.jpg', frame_right_ori)
-            print(f"{CF_user.TEST_LOAD}kg_image" + str(img_cnt) + ".jpg" + " save!")
+            save_path_1 = f"{CF.IMAGE_TARGET_OUT_CAM1_DIR}/{CF_user.LOAD_CUR}_{CF_user.LOAD_MAX}kg_image" + str(img_cnt) + '.jpg'
+            save_path_2 = f"{CF.IMAGE_TARGET_OUT_CAM2_DIR}/{CF_user.LOAD_CUR}_{CF_user.LOAD_MAX}kg_image" + str(img_cnt) + '.jpg'
+            cv.imwrite(save_path_1, frame_left_ori)
+            cv.imwrite(save_path_2, frame_right_ori)
+            print(f'save: {save_path_1}')
+            print(f'save: {save_path_2}\n')
             img_cnt += 1
         else:
-            print(f"[ERROR] TEST_MODE_EN={CF_user.TEST_MODE_EN}")
+            print(f"[ERROR] TEST_MODE_EN={CF_user.TEST_MODE_EN} (invalid value)")
         
 
-# Release and destroy all windows before termination
 cap_right.release()
 cap_left.release()
 cv.destroyAllWindows()

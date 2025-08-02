@@ -17,34 +17,4 @@ def delete_old_image(jpg_files):
         except OSError as e:
             print(f"Error:{ e.strerror}")
 
-def click_event(event, x, y, flags, params):
-    if event == cv.EVENT_LBUTTONDOWN:
-  
-        global u1, v1
-        print("點選的座標:",x, ' ', y)
-        u1 = y
-        v1 = x
 
-def click_event_CAM1_BEF(event, x, y, flags, img): # 前四個參數cv2自動給
-    if event == cv.EVENT_LBUTTONDOWN:
-        global row_1B, col_1B
-        print("coordinate:",x, ' ', y)
-        font = cv.FONT_HERSHEY_SIMPLEX
-        cv.putText(img, str(x) + ',' +
-                    str(y), (x,y), font,
-                    1, (0, 255, 0), 2) 
-        cv.imshow('img_1B_new_temp', img)       
-        row_1B = y
-        col_1B = x
-
-def click_event_CAM2_BEF(event, x, y, flags, img):
-    if event == cv.EVENT_LBUTTONDOWN:
-        global row_2B, col_2B
-        print("coordinate:",x, ' ', y)
-        font = cv.FONT_HERSHEY_SIMPLEX
-        cv.putText(img, str(x) + ',' +
-                    str(y), (x,y), font,
-                    1, (0, 255, 0), 2) 
-        cv.imshow('img_2B_new_temp', img)
-        row_2B = y
-        col_2B = x

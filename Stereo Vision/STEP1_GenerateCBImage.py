@@ -25,7 +25,7 @@ cap2 = cv.VideoCapture(CF_user.CAM2_ID, cv.CAP_DSHOW)
 
 ## close auto setting
 # 
-if CF_user.CAM_BUFFERSIZE_EN == 0:
+if CF_user.CAM_BUFFERSIZE_EN:
     cap1.set(cv.CAP_PROP_BUFFERSIZE,0)
     cap2.set(cv.CAP_PROP_BUFFERSIZE,0)
 # white balance
@@ -33,7 +33,7 @@ if CF_user.CAM_AUTO_WB_EN:
     cap1.set(cv.CAP_PROP_AUTO_WB,0)
     cap2.set(cv.CAP_PROP_AUTO_WB,0)
 #  auto focus
-if CF_user.CAM_AUTO_FOCAL_EN == 0:
+if CF_user.CAM_AUTO_FOCAL_EN:
     cap1.set(cv.CAP_PROP_AUTOFOCUS,0)
     cap2.set(cv.CAP_PROP_AUTOFOCUS,0)
 else:
