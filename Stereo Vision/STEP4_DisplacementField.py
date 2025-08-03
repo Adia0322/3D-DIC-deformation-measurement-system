@@ -7,15 +7,13 @@ import os
 import time
 import Config as CF
 import Config_user as CF_user
-import PSO_ICGN_1B2B
-import PSO_ICGN_1B1A
-import PSO_ICGN_2B2A
-from function.interpolation import get_cubic_coef_1B2B, get_cubic_coef_1B1A, get_cubic_coef_2B2A
-import Hessian
-import function.image_calibration as img_cal
+from function.algorithm.interpolation import get_cubic_coef_1B2B, get_cubic_coef_1B1A, get_cubic_coef_2B2A
+from function.algorithm import hessian
+import function.calibration.image_calibration as img_cal
+import function.algorithm.DIC as DIC
 import Points2Plane
-from function.image_processing import rotate_image
-from function.click_tool import click_recorder
+from function.processing.image_processing import rotate_image
+from function.tool.click_tool import click_recorder
 
 print(f"pwd: {os.getcwd()}")
 print(f"WORKSPACE: {CF.WORKSPACE}")
@@ -100,10 +98,13 @@ side_len = int(np.sqrt(CF_user.TEST_POINT_ARRAY))
 side_len_half = int((side_len-1)/2)
 
 # Due to the large distance (disparity) between the two cameras, a translational distance is set to facilitate DIC in quickly finding corresponding points in the 2B image.
-translate_1B2B = coor_1B.y - coor_2B.y
+translate_1B2B = coor_1B.x - coor_2B.x
+if translate_1B2B < 0:
+    print(f"translate_1B2B: {translate_1B2B}")
+    exit()
 
 # focal (unit:pixel)
-focal = Q[2][3] 
+focal = Q[2][3]
 
 # baseline (unit:mm)
 baseline = 1/Q[3][2]
@@ -158,7 +159,7 @@ C1_B_y = coor_1B.y
 
 ## Corrsponding points
 for P in range(-side_len_half,side_len_half+1,1):
-    for L in range(-side_len_half,side_len_half+1,1):  
+    for L in range(-side_len_half,side_len_half+1,1):
         C1_B_x = int(CF_user.TEST_INTERVAL*L + C1_B_x)
         C1_B_y = int(CF_user.TEST_INTERVAL*P + C1_B_y)
         C1B_points[P+side_len_half][L+side_len_half][0] = C1_B_y
@@ -175,7 +176,7 @@ for P in range(-side_len_half,side_len_half+1,1):
                                   C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
         IGrad_1B2B_v = Sobel_1B_v[C1_B_y-Len_1B2B:C1_B_y+Len_1B2B+1,\
                                   C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
-        H_inv_1B2B, J_1B2B = Hessian.Calculate(CF_user.TEST_SUBSET_SIZE_2B2A, IGrad_1B2B_u, IGrad_1B2B_v)
+        H_inv_1B2B, J_1B2B = hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_2B2A, IGrad_1B2B_u, IGrad_1B2B_v)
         
         # 從全圖插值表找插值(用於1B2B搜尋)
         Length_1B2B = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B2B-1))
@@ -183,10 +184,10 @@ for P in range(-side_len_half,side_len_half+1,1):
                                             C1_B_x-translate_1B2B-Length_1B2B:C1_B_x-translate_1B2B+Length_1B2B+1]
         # 1B2B尋找對應點與2B之影像梯度
         C2_B_x, C2_B_y, Sobel_2B_u, Sobel_2B_v, img_2B_sub =\
-        PSO_ICGN_1B2B.Calculate_1B2B(img_1B_rec_gray, img_2B_rec_gray,\
-                                     C1_B_x, C1_B_y,\
-                                     CF_user.TEST_SUBSET_SIZE_2B2A, CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
-                                     J_1B2B, CubicCoef_1B2B, translate_1B2B)
+        DIC.find_pt_info_1B2B(img_1B_rec_gray, img_2B_rec_gray,\
+                                C1_B_x, C1_B_y,\
+                                CF_user.TEST_SUBSET_SIZE_2B2A, CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
+                                J_1B2B, CubicCoef_1B2B, translate_1B2B)
             
         C2B_points[P+side_len_half][L+side_len_half][0] = C2_B_y
         C2B_points[P+side_len_half][L+side_len_half][1] = C2_B_x
@@ -210,7 +211,7 @@ for P in range(-side_len_half,side_len_half+1,1):
         IGrad_1B1A_v = Sobel_1B_v[C1_B_y-Len_1B1A:C1_B_y+Len_1B1A+1,\
                                   C1_B_x-Len_1B1A:C1_B_x+Len_1B1A+1]
         H_inv_1B1A, J_1B1A =\
-            Hessian.Calculate(CF_user.TEST_SUBSET_SIZE_1B1A, IGrad_1B1A_u, IGrad_1B1A_v)
+            hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B1A, IGrad_1B1A_u, IGrad_1B1A_v)
         # store H and J
         H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:] = H_inv_1B1A[:][:]
         J1B1A_all[P+side_len_half][L+side_len_half][:][:][:] = J_1B1A[:][:][:]
@@ -220,7 +221,7 @@ for P in range(-side_len_half,side_len_half+1,1):
         IGrad_2B2A_u = Sobel_2B_u
         IGrad_2B2A_v = Sobel_2B_v
         H_inv_2B2A, J_2B2A =\
-            Hessian.Calculate(CF_user.TEST_SUBSET_SIZE_2B2A, IGrad_2B2A_u, IGrad_2B2A_v) 
+            hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_2B2A, IGrad_2B2A_u, IGrad_2B2A_v) 
         H_inv_2B2A_test = H_inv_2B2A 
         # store H and J
         H2B2A_inv_all[P+side_len_half][L+side_len_half][:][:] = H_inv_2B2A[:][:]
@@ -244,10 +245,10 @@ dis_sum = 0
 img_idx = 1
 for img_idx in range(1,2,1):
 
-    img_1A_path = './images/'+CF_user.TEST_IMG_DIR+'/'+str(force_direction)+'/camera1/cal_'+\
-                      str(CF_user.LOAD_MAX)+'_'+str(CF_user.LOAD_MAX)+'kg_0cm.image'+str(img_idx)+'.jpg'
-    img_2A_path = './images/'+CF_user.TEST_IMG_DIR+'/'+str(force_direction)+'/camera2/cal_'+\
-                      str(CF_user.LOAD_MAX)+'_'+str(CF_user.LOAD_MAX)+'kg_0cm.image'+str(img_idx)+'.jpg'
+    img_1A_path = f'{CF.WORKSPACE}/image/'+CF_user.TEST_IMG_DIR+'/'+str(force_direction)+'/cam1/'+\
+                      str(CF_user.LOAD_CUR)+'_'+str(CF_user.LOAD_MAX)+'kg_image'+str(img_idx)+'.jpg'
+    img_2A_path = f'{CF.WORKSPACE}/image/'+CF_user.TEST_IMG_DIR+'/'+str(force_direction)+'/cam/cal_'+\
+                      str(CF_user.LOAD_CUR)+'_'+str(CF_user.LOAD_MAX)+'kg_image'+str(img_idx)+'.jpg'
     
     img_1A = cv.imread(str(img_1A_path))
     img_2A = cv.imread(str(img_2A_path))
@@ -308,10 +309,10 @@ for img_idx in range(1,2,1):
     
             # 搜尋對應點
             C1_A_x, C1_A_y, Coef_1B1A =\
-                PSO_ICGN_1B1A.Calculate_1B1A(img_1B_rec_gray, img_1A_rec_gray,\
-                                            C1_B_x, C1_B_y,\
-                                            CF_user.TEST_SUBSET_SIZE_1B1A,\
-                                            H_inv_1B1A, J_1B1A, Cubic_coef_1B1A)
+                DIC.find_pt_1B1A(img_1B_rec_gray, img_1A_rec_gray,\
+                                    C1_B_x, C1_B_y,\
+                                    CF_user.TEST_SUBSET_SIZE_1B1A,\
+                                    H_inv_1B1A, J_1B1A, Cubic_coef_1B1A)
             # Time end!
             end_1B1A = time.time()
             time_1B1A = end_1B1A - start_1B1A
@@ -332,12 +333,12 @@ for img_idx in range(1,2,1):
             J_2B2A[:][:][:] = J2B2A_all[P+side_len_half][L+side_len_half][:][:][:]         
             # 搜尋對應點
             C2_A_x, C2_A_y, Coef_2B2A =\
-                PSO_ICGN_2B2A.Calculate_2B2A(img_2A_rec_gray,\
-                                             C2_B_x, C2_B_y,\
-                                             CF_user.TEST_SUBSET_SIZE_2B2A,\
-                                             H_inv_2B2A, J_2B2A,\
-                                             Cubic_coef_2B2A,\
-                                             img_2B_sub)
+                DIC.find_pt_2B2A(img_2A_rec_gray,\
+                                    C2_B_x, C2_B_y,\
+                                    CF_user.TEST_SUBSET_SIZE_2B2A,\
+                                    H_inv_2B2A, J_2B2A,\
+                                    Cubic_coef_2B2A,\
+                                    img_2B_sub)
             # Time end!
             end_2B2A = time.time()
             time_2B2A = end_2B2A - start_2B2A

@@ -5,7 +5,7 @@ Created on Wed Mar  9 18:30:41 2022
 @author: wuaki
 """
 
-def Calculate(Size, IGrad_u, IGrad_v):
+def get_Hinv_jacobian(Size, IGrad_u, IGrad_v):
     import numpy as np
     # Half of Size length
     Len = int(0.5*(Size-1))

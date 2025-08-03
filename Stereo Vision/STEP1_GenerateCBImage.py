@@ -6,8 +6,8 @@ import glob
 import os
 import Config as CF
 import Config_user as CF_user
-from function.image_processing import rotate_image
-from function.image_processing import delete_old_image
+from function.processing.image_processing import rotate_image
+from function.processing.image_processing import delete_old_image
 
 ## Delete old images
 left_jpg_files = glob.glob(f"{CF.IMAGE_CAL_LEFT_DIR}*.jpg")

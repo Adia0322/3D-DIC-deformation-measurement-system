@@ -1,10 +1,10 @@
 ## ===== DIC (digital image correlation) ===== ##
-from function.interpolation import get_cubic_value
+from function.algorithm.interpolation import get_cubic_value
 import numpy as np
 from ctypes import cdll, c_int, c_double, POINTER
 import cv2 as cv
 import Config as CF
-def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
+def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
                    TEST_SUBSET_SIZE_2B2A, TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
                    J_1B2B, Cubic_coef_1B2B, translate_1B2B):
     ## Initial setting ##
@@ -39,7 +39,7 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     """ =============== Compute integer displacement ==============="""
     #============================ 使用C計算位移 ============================#
     # 載入SO 動態連結檔案: test_2D_DIC_displacement.so
-    m = cdll.LoadLibrary('./PSO_ICGN_1B2B.so')
+    m = cdll.LoadLibrary(f'{CF.SO_FILE_DIC_DIR}/PSO_ICGN_1B2B.so')
 
     # 設定 SO 檔案中 SCAN 函數的參數資料型態:
     m.SCAN.argtypes = [POINTER(c_int), POINTER(c_int), POINTER(c_int),\
@@ -199,11 +199,11 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     return C2_B_x, C2_B_y, Sobel_2B_u, Sobel_2B_v, img_2B_sub
 
 
-def Calculate_1B1A(img_1B, img_1A,\
-                    C1_B_x, C1_B_y,\
-                    TEST_SUBSET_SIZE_1B1A,\
-                    H_inv_1B1A, J_1B1A,\
-                    Cubic_coef_1B1A):
+def find_pt_1B1A(img_1B, img_1A,\
+                C1_B_x, C1_B_y,\
+                TEST_SUBSET_SIZE_1B1A,\
+                H_inv_1B1A, J_1B1A,\
+                Cubic_coef_1B1A):
     ## Initial setting ##
     # 設定子矩陣大小(邊長) 需要是奇數!!
     Size = TEST_SUBSET_SIZE_1B1A
@@ -232,7 +232,7 @@ def Calculate_1B1A(img_1B, img_1A,\
     """ =============== Compute integer displacement ==============="""
     #============================ 使用C計算位移 ============================#
     # 載入SO 動態連結檔案: test_2D_DIC_displacement.so
-    m = cdll.LoadLibrary('./PSO_ICGN_1B1A.so')
+    m = cdll.LoadLibrary(f'{CF.SO_FILE_DIC_DIR}/PSO_ICGN_1B1A.so')
 
     # 設定 SO 檔案中 SCAN 函數的參數資料型態:
     m.SCAN.argtypes = [POINTER(c_int), POINTER(c_int), POINTER(c_int),\
@@ -374,12 +374,12 @@ def Calculate_1B1A(img_1B, img_1A,\
 
 
 
-def Calculate_2B2A(img_2A,\
-                   C2_B_x, C2_B_y,\
-                   TEST_SUBSET_SIZE_2B2A,\
-                   H_inv_2B2A, J_2B2A,\
-                   Cubic_coef_2B2A,\
-                   img_bef_sub):
+def find_pt_2B2A(img_2A,\
+                C2_B_x, C2_B_y,\
+                TEST_SUBSET_SIZE_2B2A,\
+                H_inv_2B2A, J_2B2A,\
+                Cubic_coef_2B2A,\
+                img_bef_sub):
     ## Initial setting ##
     Size = TEST_SUBSET_SIZE_2B2A
     Len = int(0.5*(Size-1))
@@ -401,7 +401,7 @@ def Calculate_2B2A(img_2A,\
     """ =============== Compute integer displacement ==============="""
     #============================ 使用C計算位移 ============================#
     # 載入SO 動態連結檔案: test_2D_DIC_displacement.so
-    m = cdll.LoadLibrary('./PSO_ICGN_2B2A.so')
+    m = cdll.LoadLibrary(f'{CF.SO_FILE_DIC_DIR}/PSO_ICGN_2B2A.so')
 
     # 設定 SO 檔案中 SCAN 函數的參數資料型態:
     m.SCAN.argtypes = [POINTER(c_int), POINTER(c_int), POINTER(c_double),\

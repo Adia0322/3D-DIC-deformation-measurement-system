@@ -13,7 +13,7 @@ CAM_AUTO_WB_EN = 0
 
 # test mode (0: in-plane, 1:out-of-plane)
 TEST_MODE_EN = 0
-TEST_ROTATE_IMG_EN = 1
+TEST_ROTATE_IMG_EN = 0
 TEST_REC_IMG_EN = 1
 TEST_IMG_DIR = 'Target'
 TEST_POINT_ARRAY = 25
