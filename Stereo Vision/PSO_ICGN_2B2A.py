@@ -113,11 +113,11 @@ def Calculate_2B2A(img_2A,\
         
     """========================== Iteration ============================="""
     # f:referenve subset, g:target subset
-    count = 0
+    cnt = 0
     limit = np.sqrt(np.square(delta_P[0]) + np.square(delta_P[1]*Len)+\
                     np.square(delta_P[2]*Len) + np.square(delta_P[3])+\
                     np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
-    while limit > 0.0001 and count < 30:
+    while limit > 0.0001 and cnt < 30:
         # Average gray value of deformed subset points(with interpolation)
         Gvalue_g = np.zeros((Size,Size), dtype=float)
         
@@ -176,7 +176,7 @@ def Calculate_2B2A(img_2A,\
         # Update warp function
         warp_aft_coef = warp_aft_coef.dot(warp_inc_coef_inv)
         # count
-        count += 1
+        cnt += 1
         
     U = warp_aft_coef[0][2] # 垂直
     V = warp_aft_coef[1][2] # 水平

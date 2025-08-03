@@ -12,7 +12,7 @@ import PSO_ICGN_1B1A
 import PSO_ICGN_2B2A
 from function.interpolation import get_cubic_coef_1B2B, get_cubic_coef_1B1A, get_cubic_coef_2B2A
 import Hessian
-import Image_Calibration as Img_cal    
+import function.image_calibration as img_cal
 import Points2Plane
 from function.image_processing import rotate_image
 from function.click_tool import click_recorder
@@ -51,7 +51,7 @@ if CF_user.TEST_ROTATE_IMG_EN == 1:
 
 ## image rectification
 if CF_user.TEST_REC_IMG_EN == 1:
-    img_1B_rec, img_2B_rec = Img_cal.undistortRectify(img_1B, img_2B)
+    img_1B_rec, img_2B_rec = img_cal.undistortRectify(img_1B, img_2B)
 else:
     img_1B_rec = img_1B
     img_2B_rec = img_2B
@@ -259,7 +259,7 @@ for img_idx in range(1,2,1):
     
     # image rectification
     if CF_user.TEST_REC_IMG_EN == 1:
-        img_1A_rec, img_2A_rec = Img_cal.undistortRectify(img_1A, img_2A)
+        img_1A_rec, img_2A_rec = img_cal.undistortRectify(img_1A, img_2A)
     else:
         img_1A_rec = img_1A
         img_2A_rec = img_2A

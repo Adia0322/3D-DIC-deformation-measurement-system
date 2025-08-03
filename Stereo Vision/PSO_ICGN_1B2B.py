@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Feb 14 16:32:26 2022
 
@@ -6,13 +5,12 @@ Created on Mon Feb 14 16:32:26 2022
 注意: 執行前請先確認 Size Scan 在python c 皆一致，否則無法執行卻沒有錯誤信息!!
 注意: 不同圖片尺寸需要在c程式裡修改 img_cloumn 的大小 !!
 """
-
+from function.interpolation import get_cubic_value
 def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
                    TEST_SUBSET_SIZE_2B2A, TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
                    J_1B2B, Cubic_coef_1B2B, translate_1B2B):
     import numpy as np
     from ctypes import cdll, c_int, c_double, POINTER
-    import Bicubic
     import cv2 as cv
     """ =============== Initial setting =============== """
     # 取得圖片尺寸
@@ -116,11 +114,11 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
                               (0, 0, 1)], dtype=float)
         
     """========================== Iteration ============================="""
-    count = 0
+    cnt = 0
     limit = np.sqrt(np.square(delta_P[0]) + np.square(delta_P[1]*Len)+\
                            np.square(delta_P[2]*Len) + np.square(delta_P[3])+\
                            np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
-    while limit > 0.0001 and count < 20:
+    while limit > 0.0001 and cnt < 20:
         # Average gray value of deformed subset points(with interpolation)
         Gvalue_g = np.zeros((Size,Size), dtype=float)
         for i in range(0,Size,1):
@@ -147,8 +145,8 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
                 A = Cubic_coef_1B2B[a1][a2][:] # 加上Length後表示起點為子集合中心開始算
                 A_re = np.reshape(A, (4,4), order='F')
                 # Calculate interpolation and store in matrix Gvalue_g[][]
-                Gvalue_g[i][j] = Bicubic.Bicubic_int(warp_aft[0]-np.floor(warp_aft[0]),\
-                                                           warp_aft[1]-np.floor(warp_aft[1]), A_re)
+                Gvalue_g[i][j] = get_cubic_value(warp_aft[0]-np.floor(warp_aft[0]),\
+                                                 warp_aft[1]-np.floor(warp_aft[1]), A_re)
 
         # compute g_average
         g_average = np.mean(Gvalue_g)
@@ -176,7 +174,7 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
         # 更新warp function
         warp_aft_coef = warp_aft_coef.dot(warp_inc_coef_inv)
         # 計次數
-        count += 1
+        cnt += 1
     
     # Subpixel displacement
     U = warp_aft_coef[0][2] # 垂直
@@ -200,9 +198,8 @@ def Calculate_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
             A = Cubic_coef_1B2B[a1][a2][:]
             A_re = np.reshape(A, (4,4), order='F')
             # 計算插值之灰階值，並且儲存至Gvalue_g
-            Gvalue_TEMP[i][j] =\
-                Bicubic.Bicubic_int(warp_aft[0]-np.floor(warp_aft[0]),\
-                                          warp_aft[1]-np.floor(warp_aft[1]), A_re)
+            Gvalue_TEMP[i][j] = get_cubic_value(warp_aft[0]-np.floor(warp_aft[0]),\
+                                                warp_aft[1]-np.floor(warp_aft[1]), A_re)
     # new gray value matrix of C2B (with interpolation): 
     img_2B_sub = Gvalue_TEMP[1:Size_TEMP-1,1:Size_TEMP-1]
     # Image gradient of new C2B image

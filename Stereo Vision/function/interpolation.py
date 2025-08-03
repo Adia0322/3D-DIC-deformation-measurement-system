@@ -34,7 +34,7 @@ def get_cubic_coef_1B1A(Cubic_Xinv, Length, img):
     img = img.astype('int')
 
     # 載入SO 動態連結檔案:
-    m = cdll.LoadLibrary(f'{CF.INTERPLATION_DIR}/CubicCoef_1B1A.so')
+    m = cdll.LoadLibrary(f'{CF.SO_FILE_INTERPLATION_DIR}/CubicCoef_1B1A.so')
     # 設定 SO 檔案中 CubicCoef 函數的參數資料型態:
     m.CubicCoef.argtypes = [POINTER(c_double), POINTER(c_int),\
                             POINTER(c_int), POINTER(c_double)]
@@ -58,7 +58,7 @@ def get_cubic_coef_2B2A(Cubic_Xinv, Length, img):
     img = img.astype('int')
     #============================ C ============================#
     # 載入SO 動態連結檔案:
-    m = cdll.LoadLibrary(f'{CF.INTERPLATION_DIR}./CubicCoef_2B2A.so')
+    m = cdll.LoadLibrary(f'{CF.SO_FILE_INTERPLATION_DIR}./CubicCoef_2B2A.so')
     # 設定 SO 檔案中 CubicCoef 函數的參數資料型態:
     m.CubicCoef.argtypes = [POINTER(c_double), POINTER(c_int),\
                             POINTER(c_int), POINTER(c_double)]
@@ -73,3 +73,9 @@ def get_cubic_coef_2B2A(Cubic_Xinv, Length, img):
     m.CubicCoef(Cubic_Xinv_Ptr, Length_Ptr, img_Ptr, Coef_2B2A_Ptr)
     #===========================================================#
     return Coef_2B2A
+
+def get_cubic_value(u, v, coefficient):
+    U = np.array([1, u, u*u, u*u*u], dtype=float)
+    V = np.array([1, v, v*v, v*v*v], dtype=float)
+    gray_value = U.dot(coefficient.dot(np.transpose(V))) # U*coefficient*V
+    return gray_value
