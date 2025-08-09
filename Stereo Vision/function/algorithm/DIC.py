@@ -5,10 +5,12 @@ from ctypes import cdll, c_int, c_double, POINTER
 import cv2 as cv
 import Config as CF
 def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
-                   TEST_SUBSET_SIZE_2B2A, TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
+                   TEST_SUBSET_SIZE_1B2B,\
+                   TEST_SUBSET_SIZE_2B2A,\
+                    TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
                    J_1B2B, Cubic_coef_1B2B, translate_1B2B):
     ## Initial setting ##
-    Size = TEST_SUBSET_SIZE_2B2A
+    Size = TEST_SUBSET_SIZE_1B2B
     Scan = TEST_SCAN_SIZE_1B2B 
     # 設定插值方陣之邊長 (在主程式已經有算了，為了不再增加函式變數因此重算一遍)
     Length = int(0.5*(Size-1)+0.5*(Scan-1))
@@ -117,6 +119,8 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
                 # Find the coefficient in lookup table
                 a1 = Length + int(np.floor(warp_aft[0])) # 
                 a2 = Length + int(np.floor(warp_aft[1])) #
+                print(f"a1: {a1}")
+                print(f"a2: {a2}")
                 # A: cubic coefficient in a1, a2
                 if a1>2*Length:
                     a1=2*Length
@@ -135,6 +139,9 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
                 # Calculate interpolation and store in matrix Gvalue_g[][]
                 Gvalue_g[i][j] = get_cubic_value(warp_aft[0]-np.floor(warp_aft[0]),\
                                                  warp_aft[1]-np.floor(warp_aft[1]), A_re)
+                
+                
+                exit()
 
         # compute g_average
         g_average = np.mean(Gvalue_g)

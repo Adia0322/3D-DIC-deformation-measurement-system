@@ -79,3 +79,14 @@ def get_cubic_value(u, v, coefficient):
     V = np.array([1, v, v*v, v*v*v], dtype=float)
     gray_value = U.dot(coefficient.dot(np.transpose(V))) # U*coefficient*V
     return gray_value
+
+
+def get_cubic_value_spline(block4x4, x, y):
+    import numpy as np
+    from scipy.interpolate import CubicSpline
+    # block4x4: 4x4 區塊
+    # 先對每一列做 x 方向的三次樣條
+    temp = np.array([CubicSpline(range(4), row)(x) for row in block4x4])
+    # 再對結果做 y 方向的三次樣條
+    value = CubicSpline(range(4), temp)(y)
+    return value

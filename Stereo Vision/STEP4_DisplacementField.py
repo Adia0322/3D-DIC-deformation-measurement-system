@@ -3,6 +3,7 @@ print("\n<< Stereo_DIC_PSO_ICGN >>")
 
 import numpy as np
 import cv2 as cv
+import sys
 import os
 import time
 import Config as CF
@@ -55,8 +56,8 @@ else:
     img_2B_rec = img_2B
 
 ## copy rec images
-img_1B_rec_temp = img_1B_rec
-img_2B_rec_temp = img_2B_rec
+img_1B_rec_temp = np.copy(img_1B_rec)
+img_2B_rec_temp = np.copy(img_2B_rec)
 
 ## Select first point in left image
 cv.putText(img_1B_rec_temp, 'set a reference point on img_1B', (20, 60),\
@@ -68,7 +69,7 @@ cv.imshow("img_2B_rec_temp", img_2B_rec_temp)
 
 coor_1B = click_recorder()
 print('Please set a reference point')
-cv.setMouseCallback('img_1B_rec_temp', coor_1B.callback, img_1B_rec_temp)
+cv.setMouseCallback('img_1B_rec_temp', coor_1B.callback_cam1, img_1B_rec_temp)
 cv.waitKey(0) 
 cv.destroyAllWindows() 
 
@@ -82,7 +83,7 @@ cv.imshow("img_2B_rec_temp", img_2B_rec_temp)
 
 print('Please choose a reference point')
 coor_2B = click_recorder()
-cv.setMouseCallback('img_2B_rec_temp', coor_2B.callback, img_2B_rec_temp)
+cv.setMouseCallback('img_2B_rec_temp', coor_2B.callback_cam2, img_2B_rec_temp)
 cv.waitKey(0) 
 cv.destroyAllWindows() 
 
@@ -92,15 +93,21 @@ map_path =  f"{CF.WORKSPACE}/stereoMap.xml"
 cv_file.open(map_path, cv.FileStorage_READ)
 Q = cv_file.getNode('Q').mat()
 
+
 """ =============== parameters ==============="""
 ## Set the number of analysis points.
 side_len = int(np.sqrt(CF_user.TEST_POINT_ARRAY))
 side_len_half = int((side_len-1)/2)
 
+C1_B_x = 466
+C1_B_y = 267
+C2_B_x = 167
+C2_B_y = 262
+
 # Due to the large distance (disparity) between the two cameras, a translational distance is set to facilitate DIC in quickly finding corresponding points in the 2B image.
-translate_1B2B = coor_1B.x - coor_2B.x
+translate_1B2B = C1_B_x - C2_B_x  # !!!!!!!!!!!!!!! 修改過
+print(f"translate_1B2B:{translate_1B2B}")
 if translate_1B2B < 0:
-    print(f"translate_1B2B: {translate_1B2B}")
     exit()
 
 # focal (unit:pixel)
@@ -154,8 +161,8 @@ stress_in = np.zeros((side_len,side_len), dtype=float)
 stress_out = np.zeros((side_len,side_len), dtype=float)
 
 # start point : (C1_B_x, C1_B_y)
-C1_B_x = coor_1B.x
-C1_B_y = coor_1B.y
+#C1_B_x = coor_1B.x
+#C1_B_y = coor_1B.y
 
 ## Corrsponding points
 for P in range(-side_len_half,side_len_half+1,1):
@@ -171,22 +178,41 @@ for P in range(-side_len_half,side_len_half+1,1):
         img_2B_rec_gray = cv.cvtColor(img_2B_rec, cv.COLOR_BGR2GRAY)
 
         # Image gradient of 1B2B
-        Len_1B2B = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1))
+        Len_1B2B = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B2B-1))
         IGrad_1B2B_u = Sobel_1B_u[C1_B_y-Len_1B2B:C1_B_y+Len_1B2B+1,\
                                   C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
         IGrad_1B2B_v = Sobel_1B_v[C1_B_y-Len_1B2B:C1_B_y+Len_1B2B+1,\
                                   C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
-        H_inv_1B2B, J_1B2B = hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_2B2A, IGrad_1B2B_u, IGrad_1B2B_v)
+        H_inv_1B2B, J_1B2B = hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B2B, IGrad_1B2B_u, IGrad_1B2B_v)
         
         # 從全圖插值表找插值(用於1B2B搜尋)
-        Length_1B2B = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B2B-1))
+        Length_1B2B = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B2B-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B2B-1))
         CubicCoef_1B2B = CubicCoef_1B2B_ALL[C1_B_y-Length_1B2B:C1_B_y+Length_1B2B+1,\
                                             C1_B_x-translate_1B2B-Length_1B2B:C1_B_x-translate_1B2B+Length_1B2B+1]
         # 1B2B尋找對應點與2B之影像梯度
+        np.savez("new_dic_H_inv_1B2B.npz",H_inv_1B2B)
+        np.savez("new_dic_J_1B2B.npz",J_1B2B)
+        np.savez("new_dic_CubicCoef_1B2B.npz",CubicCoef_1B2B)
+        #print(f"H_inv_1B2B:{H_inv_1B2B}")
+        #print(f"J_1B2B:{J_1B2B}")
+        #print(f"CubicCoef_1B2B:{CubicCoef_1B2B}")
+        print(f"translate_1B2B:{translate_1B2B}")
+        
+        import PSO_ICGN_1B2B
+        C2_B_x, C2_B_y, Sobel_2B_u, Sobel_2B_v, img_2B_sub =\
+        PSO_ICGN_1B2B.Calculate_1B2B(img_1B_rec_gray, img_2B_rec_gray,\
+                                C1_B_x, C1_B_y,\
+                                CF_user.TEST_SUBSET_SIZE_1B2B,\
+                                CF_user.TEST_SUBSET_SIZE_2B2A,\
+                                CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
+                                J_1B2B, CubicCoef_1B2B, translate_1B2B)
+        sys.exit()
         C2_B_x, C2_B_y, Sobel_2B_u, Sobel_2B_v, img_2B_sub =\
         DIC.find_pt_info_1B2B(img_1B_rec_gray, img_2B_rec_gray,\
                                 C1_B_x, C1_B_y,\
-                                CF_user.TEST_SUBSET_SIZE_2B2A, CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
+                                CF_user.TEST_SUBSET_SIZE_1B2B,\
+                                CF_user.TEST_SUBSET_SIZE_2B2A,\
+                                CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
                                 J_1B2B, CubicCoef_1B2B, translate_1B2B)
             
         C2B_points[P+side_len_half][L+side_len_half][0] = C2_B_y
