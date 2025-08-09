@@ -41,7 +41,7 @@ double GRandom(void);
 void init_random_seed();
 void print_array(int array[][Size]);
 
-/* search (Main)  */
+/* construct C matrix (Main)  */
 __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
           double Mean_bef[], int Object_point[], int Displacement[], double CoefValue[])
 {
@@ -55,6 +55,10 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 	
 	// initialize random var (only do one time)
 	init_random_seed();
+	
+	printf("\n");
+	printf("Object_point[0]: %d\n", Object_point[0]);
+	printf("Object_point[1]: %d\n", Object_point[1]);
 	
 	for (i=0;i<Population;i++)
 	{
@@ -197,7 +201,7 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 
 
 /*============================ Functions ==============================*/
-/*ZNCC(zero-normalized cross-correlation)(-1 ~ +1) */
+/* �̾� ZNCC(zero-normalized cross-correlation)�����Y�Ʒǫh �p������Y�� (-1 ~ +1) */
 double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_column],\
                      int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[])   
 {
@@ -205,6 +209,7 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 	int row, col;
 	double Mean_aft, Sum_Numerator=0.0, Sum_Denominator_bef=0.0, Sum_Denominator_aft=0.0, coef=0.0;
 	/* Construct img_aft_sub */
+	int check_flag = 0;
 	for (i=0;i<Size;i++) 
 	{
 		for (j=0;j<Size;j++)
@@ -212,16 +217,34 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 			row = i - SizeHalf + Pi_u + Object_point[0];
 			col = j - SizeHalf + Pi_v + Object_point[1];
 			if(row>=img_row || row<0 || col>=img_column || col<0){
-				printf("\n[ERROR] row>img_row || row<0 || col>img_column || col<img_column\n");
+				printf("\n");
+				printf("row: %d\n\n", row);
+
+				printf("j: %d\n", j);
+				printf("SizeHalf: %d\n", SizeHalf);
+				printf("Pi_v: %d\n", Pi_v);
+				printf("Object_point[1]: %d\n", Object_point[1]);
+				printf("col: %d\n\n", col);
+				printf("[ERROR] row>img_row || row<0 || col>img_column || col<img_column\n");
+				check_flag = 1;
 				exit(1);
 			}
 			img_aft_sub[i][j] = img_aft[row][col];
 			if (img_aft_sub[i][j]>255 || img_aft_sub[i][j]<0){
+				printf("i: %d", i);
+				printf("j: %d", j);
 				printf("\n[ERROR] img_aft_sub[i][j]>255 || img_aft_sub[i][j]<00");
+				check_flag = 1;
 				exit(1);
 			}
 			
 		}
+	}
+	if (check_flag==1){
+		printf("img_aft_sub:\n");
+		print_array(img_aft_sub);
+		printf("\nEND\n");
+		exit(0);
 	}
 	
 	/* Mean of img_aft_sub */

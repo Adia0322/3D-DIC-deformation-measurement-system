@@ -99,23 +99,38 @@ Q = cv_file.getNode('Q').mat()
 side_len = int(np.sqrt(CF_user.TEST_POINT_ARRAY))
 side_len_half = int((side_len-1)/2)
 
-C1_B_x = 466
-C1_B_y = 267
-C2_B_x = 167
-C2_B_y = 262
+# start point : (C1_B_x, C1_B_y)
+C1_B_x = coor_1B.x
+C1_B_y = coor_1B.y
+C2_B_x = coor_2B.x
+C2_B_y = coor_2B.y
+
+# C1_B_x = 466
+# C1_B_y = 267
+# C2_B_x = 167
+# C2_B_y = 262
+
+## check if C1_B_x, y and C2_B_x, y not defined
+for var_name in ['C1_B_x', 'C1_B_y', 'C2_B_x', 'C2_B_y']:
+    if var_name not in globals() or globals()[var_name] is None:
+        print(f"[ERROR] {var_name} not defined or is None!")
+
+print(f"C1_B_x: {C1_B_x}")
+print(f"C1_B_y: {C1_B_y}")
+print(f"C2_B_x: {C2_B_x}")
+print(f"C2_B_y: {C2_B_y}")
 
 # Due to the large distance (disparity) between the two cameras, a translational distance is set to facilitate DIC in quickly finding corresponding points in the 2B image.
 translate_1B2B = C1_B_x - C2_B_x  # !!!!!!!!!!!!!!! 修改過
 print(f"translate_1B2B:{translate_1B2B}")
 if translate_1B2B < 0:
-    exit()
+    print(f"translate_1B2B: {translate_1B2B} < 0 !!")
+    exit(1)
 
 # focal (unit:pixel)
 focal = Q[2][3]
-
 # baseline (unit:mm)
 baseline = 1/Q[3][2]
-
 # The xy coordinates of the center points of the two cameras.
 principal_x = -Q[0][3]
 principal_y = -Q[1][3]
@@ -160,9 +175,6 @@ disM_in_2 = np.zeros((side_len,side_len), dtype=float)
 stress_in = np.zeros((side_len,side_len), dtype=float)
 stress_out = np.zeros((side_len,side_len), dtype=float)
 
-# start point : (C1_B_x, C1_B_y)
-#C1_B_x = coor_1B.x
-#C1_B_y = coor_1B.y
 
 ## Corrsponding points
 for P in range(-side_len_half,side_len_half+1,1):
@@ -190,23 +202,8 @@ for P in range(-side_len_half,side_len_half+1,1):
         CubicCoef_1B2B = CubicCoef_1B2B_ALL[C1_B_y-Length_1B2B:C1_B_y+Length_1B2B+1,\
                                             C1_B_x-translate_1B2B-Length_1B2B:C1_B_x-translate_1B2B+Length_1B2B+1]
         # 1B2B尋找對應點與2B之影像梯度
-        np.savez("new_dic_H_inv_1B2B.npz",H_inv_1B2B)
-        np.savez("new_dic_J_1B2B.npz",J_1B2B)
-        np.savez("new_dic_CubicCoef_1B2B.npz",CubicCoef_1B2B)
-        #print(f"H_inv_1B2B:{H_inv_1B2B}")
-        #print(f"J_1B2B:{J_1B2B}")
-        #print(f"CubicCoef_1B2B:{CubicCoef_1B2B}")
-        print(f"translate_1B2B:{translate_1B2B}")
-        
-        import PSO_ICGN_1B2B
-        C2_B_x, C2_B_y, Sobel_2B_u, Sobel_2B_v, img_2B_sub =\
-        PSO_ICGN_1B2B.Calculate_1B2B(img_1B_rec_gray, img_2B_rec_gray,\
-                                C1_B_x, C1_B_y,\
-                                CF_user.TEST_SUBSET_SIZE_1B2B,\
-                                CF_user.TEST_SUBSET_SIZE_2B2A,\
-                                CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
-                                J_1B2B, CubicCoef_1B2B, translate_1B2B)
-        sys.exit()
+
+
         C2_B_x, C2_B_y, Sobel_2B_u, Sobel_2B_v, img_2B_sub =\
         DIC.find_pt_info_1B2B(img_1B_rec_gray, img_2B_rec_gray,\
                                 C1_B_x, C1_B_y,\
@@ -214,7 +211,7 @@ for P in range(-side_len_half,side_len_half+1,1):
                                 CF_user.TEST_SUBSET_SIZE_2B2A,\
                                 CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
                                 J_1B2B, CubicCoef_1B2B, translate_1B2B)
-            
+
         C2B_points[P+side_len_half][L+side_len_half][0] = C2_B_y
         C2B_points[P+side_len_half][L+side_len_half][1] = C2_B_x
         """ 計算初始三維座標 """
@@ -270,11 +267,18 @@ nVector = nVector/np.linalg.norm(nVector)
 dis_sum = 0
 img_idx = 1
 for img_idx in range(1,2,1):
+    loaded_file_name = f"{CF_user.LOAD_CUR}_{CF_user.LOAD_MAX}kg_image{img_idx}.jpg"
+    if CF_user.TEST_MODE_EN == 0:
+        img_1A_path = os.path.join(CF.IMAGE_TARGET_IN_CAM1_DIR, loaded_file_name)
+        img_2A_path = os.path.join(CF.IMAGE_TARGET_IN_CAM2_DIR, loaded_file_name)
+    elif CF_user.TEST_MODE_EN == 1:
+        img_1A_path = os.path.join(CF.IMAGE_TARGET_OUT_CAM1_DIR, loaded_file_name)
+        img_2A_path = os.path.join(CF.IMAGE_TARGET_OUT_CAM2_DIR, loaded_file_name)
+    else:
+        print(f"[ERROR] TEST_MODE_EN={CF_user.TEST_MODE_EN} (Invalid!)")
 
-    img_1A_path = f'{CF.WORKSPACE}/image/'+CF_user.TEST_IMG_DIR+'/'+str(force_direction)+'/cam1/'+\
-                      str(CF_user.LOAD_CUR)+'_'+str(CF_user.LOAD_MAX)+'kg_image'+str(img_idx)+'.jpg'
-    img_2A_path = f'{CF.WORKSPACE}/image/'+CF_user.TEST_IMG_DIR+'/'+str(force_direction)+'/cam/cal_'+\
-                      str(CF_user.LOAD_CUR)+'_'+str(CF_user.LOAD_MAX)+'kg_image'+str(img_idx)+'.jpg'
+    # check path
+    
     
     img_1A = cv.imread(str(img_1A_path))
     img_2A = cv.imread(str(img_2A_path))

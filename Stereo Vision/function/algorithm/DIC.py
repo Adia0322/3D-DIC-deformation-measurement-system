@@ -17,35 +17,40 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     # 子集合之半邊長
     Len = int(0.5*(Size-1)) 
 
-    img_bef = np.array(img_1B, dtype=int)
-    img_aft = np.array(img_2B, dtype=int)
+    img_bef = np.array(img_1B, dtype=np.int32)
+    img_aft = np.array(img_2B, dtype=np.int32)
 
     # 建立位移暫存區
-    Displacement = np.zeros((2,), dtype=int) # 依序為 [u, v]
+    Displacement = np.zeros((2,), dtype=np.int32) # 依序為 [u, v]
     # 係數index、CoefValue
-    CoefValue = np.zeros((2,), dtype=float)
+    CoefValue = np.zeros((2,), dtype=np.float64)
     # 所選取目標點的位置 
-    Object_point = np.array((C1_B_y,C1_B_x-translate_1B2B), dtype=int)
+    Object_point = np.array((C1_B_y, C1_B_x - translate_1B2B), dtype=np.int32)
+
+    print(f"C1_B_x: {C1_B_x}")
+    print(f"C1_B_y: {C1_B_y}")
+    print(f"Object_point[0]: {Object_point[0]}")
+    print(f"Object_point[1]: {Object_point[1]}")
 
     # 建構變形前後影像之子矩陣: img_bef_sub
     img_bef_sub = img_bef[C1_B_y-Len:C1_B_y+Len+1,\
                           C1_B_x-Len:C1_B_x+Len+1]  
 
     # Reference subset (undeformed subset)
-    Mean_bef = np.array(np.mean(img_bef_sub), dtype=float)
-    img_bef_sub = img_bef_sub.astype(int)# 將float轉int
+    Mean_bef = np.array(np.mean(img_bef_sub), dtype=np.float64)
+    img_bef_sub = img_bef_sub.astype(np.int32)# 將float轉int
 
     # Target subset (deformed subset)
-    img_aft_sub = np.zeros((Size,Size), dtype=int)
+    img_aft_sub = np.zeros((Size, Size), dtype=np.int32)
     
     """ =============== Compute integer displacement ==============="""
     #============================ 使用C計算位移 ============================#
     # 載入SO 動態連結檔案: test_2D_DIC_displacement.so
-    m = cdll.LoadLibrary(f'{CF.SO_FILE_DIC_DIR}/PSO_ICGN_1B2B.so')
+    m = cdll.LoadLibrary(f'{CF.DLL_DIC_DIR}/PSO_ICGN_1B2B.dll')
 
     # 設定 SO 檔案中 SCAN 函數的參數資料型態:
     m.SCAN.argtypes = [POINTER(c_int), POINTER(c_int), POINTER(c_int),\
-                       POINTER(c_double), POINTER(c_int), POINTER(c_double),\
+                       POINTER(c_double), POINTER(c_int), POINTER(c_int),\
                        POINTER(c_double)]
 
     # 設定 SO 檔案中 SCAN 函數的傳回值資料型態
@@ -57,7 +62,7 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     img_bef_sub_Ptr = img_bef_sub.ctypes.data_as(POINTER(c_int))
     Mean_bef_Ptr = Mean_bef.ctypes.data_as(POINTER(c_double))
     Object_point_Ptr = Object_point.ctypes.data_as(POINTER(c_int))
-    Displacement_Ptr = Displacement.ctypes.data_as(POINTER(c_double))
+    Displacement_Ptr = Displacement.ctypes.data_as(POINTER(c_int))
     CoefValue_Ptr = CoefValue.ctypes.data_as(POINTER(c_double))                        
 
     # 呼叫 SO 檔案中的 SCAN 函數 
@@ -119,8 +124,6 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
                 # Find the coefficient in lookup table
                 a1 = Length + int(np.floor(warp_aft[0])) # 
                 a2 = Length + int(np.floor(warp_aft[1])) #
-                print(f"a1: {a1}")
-                print(f"a2: {a2}")
                 # A: cubic coefficient in a1, a2
                 if a1>2*Length:
                     a1=2*Length
@@ -140,9 +143,6 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
                 Gvalue_g[i][j] = get_cubic_value(warp_aft[0]-np.floor(warp_aft[0]),\
                                                  warp_aft[1]-np.floor(warp_aft[1]), A_re)
                 
-                
-                exit()
-
         # compute g_average
         g_average = np.mean(Gvalue_g)
 
