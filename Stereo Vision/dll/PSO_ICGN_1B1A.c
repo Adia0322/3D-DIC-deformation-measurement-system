@@ -1,4 +1,4 @@
-/*  PSO_ICGN_1B2B 2022.03.06 23:22 */ 
+/*  PSO_ICGN_1B1A 2022.03.06 23:22 */ 
 /* scan must be odd number, ex:101 */ 
 /* Coefficient criterion: ZNCC */ 
 #include <stdio.h>
@@ -12,15 +12,15 @@
 #define img_row 480 
 #define img_column 640 
 
-#define Size 31 
+#define Size 31
 #define SizeHalf (Size-1)/2 
 #define scan 31
-// PSO 
-#define Population 50
+
+#define Population 20 
 #define Dimension 2
-#define Iteration 10
+#define Iteration 4
 #define Iter_reciprocal (1.0/Iteration)
-#define ArraySize_Pini 5
+#define ArraySize_Pini 3
 #define FixedPointRange scan/2
 #define ArrayInterval (FixedPointRange)/(ArraySize_Pini-1) 
 #define Array_Start ArrayInterval*(ArraySize_Pini-1)/2
@@ -28,7 +28,7 @@
 #define Vmax 0.5*Boundary_Length
 #define Vini 0.2*Vmax
 #define W_upper 0.9 
-#define W_lower 0.4 
+#define W_lower 0.4
 #define Decrease_factor 1 
 #define Increase_factor 1.05
 #define Cognition_factor 1.0 
@@ -39,13 +39,12 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
                      int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[]);
 double GRandom(void);
 void init_random_seed();
-void print_array(int array[][Size]);
 
-/* construct C matrix (Main)  */
-__declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
+/* construct C matrix (Main)  */ 
+void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
           double Mean_bef[], int Object_point[], int Displacement[], double CoefValue[])
 {
-	int i, j, k, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0;
+	int i, j, k, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0; /*  */ 
 	int max_index = 0; 
 	double Pbest[Population][Dimension], Gbest[Dimension];   /* Gbest[0] = x, Gbest[1]  = y */
 	double upper_bounds[2]={Boundary_Length, Boundary_Length}, lower_bounds[2]={-Boundary_Length, -Boundary_Length}; 
@@ -56,13 +55,8 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 	// initialize random var (only do one time)
 	init_random_seed();
 	
-	printf("\n");
-	printf("Object_point[0]: %d\n", Object_point[0]);
-	printf("Object_point[1]: %d\n", Object_point[1]);
-	
 	for (i=0;i<Population;i++)
 	{
-		//(ArraySize_Pini)*(ArraySize_Pini)
 		if (i<(ArraySize_Pini*ArraySize_Pini))
 		{
 			Vi[i][0] = Vini*(GRandom()*2-1);
@@ -81,8 +75,8 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 			/* Calculate SSD (sum of squared differences) */
 			Pi_u_ini = (int)Pi[i][0];
 			Pi_v_ini = (int)Pi[i][1];
-			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point, img_aft,\
-			                             img_aft_sub, img_bef_sub, Mean_bef);
+			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point,\
+			                             img_aft, img_aft_sub, img_bef_sub, Mean_bef);
 			
 			/* Individual best value */
 			max_value_Pbest[i] = Cost_initial;
@@ -96,6 +90,7 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 				Gbest[0] = Pi[max_index][0];
 				Gbest[1] = Pi[max_index][1];
 			}
+			
 			Count_u += 1;
 		}
 		
@@ -103,7 +98,7 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 		{
 			for (j=0;j<Dimension;j++)
 			{
-				Vi[i][j] = Vini*(GRandom()*2-1);
+				Vi[i][j] = Vini*(GRandom()*2-1); /* Vini*(-1.0 ~ 1.0) */
 				Pi[i][j] = lower_bounds[j] + 0.5*Boundary_Length +\
 				           0.5*GRandom()*(upper_bounds[j]-lower_bounds[j]);
 				
@@ -112,8 +107,8 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 			/* Calculate SSD (sum of squared differences) */
 			Pi_u_ini = (int)Pi[i][0];
 			Pi_v_ini = (int)Pi[i][1];
-			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point, img_aft,\
-			                             img_aft_sub, img_bef_sub, Mean_bef);
+			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point,\
+			                             img_aft, img_aft_sub, img_bef_sub, Mean_bef);
 			
 			/* Individual best value */
 			max_value_Pbest[i] = Cost_initial;
@@ -121,8 +116,8 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 			/* Global best value */
 			if (Cost_initial>max_value_Gbest)
 			{
-				max_value_Gbest = Cost_initial; //max_value_Gbest
-				max_index = i; /*  (u,v) = (Pi[max_index,0] , Pi[max_index,1]) */
+				max_value_Gbest = Cost_initial;
+				max_index = i;
 				
 				Gbest[0] = Pi[max_index][0];
 				Gbest[1] = Pi[max_index][1];
@@ -131,6 +126,7 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 	}
 	
 	/* Start iteration */ 
+	
 	for (k=0;k<Iteration;k++)
 	{
 		for (i=0;i<Population;i++)
@@ -161,7 +157,8 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 					Pi[i][j] = lower_bounds[j];
 				}
 			}
-			/* Calculate ZNCC (sum of squared differences) */
+			
+			/* Calculate SSD (sum of squared differences) */
 			Pi_u = (int)Pi[i][0]; /* array only accept integer as Argument */
 			Pi_v = (int)Pi[i][1];
 			Cost = Cost_function(Pi_u, Pi_v, Object_point, img_aft,\
@@ -188,6 +185,7 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 			/*sensor[i][0] = (int)Pi[i][0];*/
 			/*sensor[i][1] = (int)Pi[i][1];*/
 		}
+		
 	}
 	/*sensor_coef[0] = Cost_function(0, 0, Object_point, img_aft, img_aft_sub, img_bef_sub);*/
 	/* Output Result */
@@ -201,7 +199,6 @@ __declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Siz
 
 
 /*============================ Functions ==============================*/
-/* �̾� ZNCC(zero-normalized cross-correlation)�����Y�Ʒǫh �p������Y�� (-1 ~ +1) */
 double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_column],\
                      int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[])   
 {
@@ -209,7 +206,6 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 	int row, col;
 	double Mean_aft, Sum_Numerator=0.0, Sum_Denominator_bef=0.0, Sum_Denominator_aft=0.0, coef=0.0;
 	/* Construct img_aft_sub */
-	int check_flag = 0;
 	for (i=0;i<Size;i++) 
 	{
 		for (j=0;j<Size;j++)
@@ -217,36 +213,16 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 			row = i - SizeHalf + Pi_u + Object_point[0];
 			col = j - SizeHalf + Pi_v + Object_point[1];
 			if(row>=img_row || row<0 || col>=img_column || col<0){
-				printf("\n");
-				printf("row: %d\n\n", row);
-
-				printf("j: %d\n", j);
-				printf("SizeHalf: %d\n", SizeHalf);
-				printf("Pi_v: %d\n", Pi_v);
-				printf("Object_point[1]: %d\n", Object_point[1]);
-				printf("col: %d\n\n", col);
-				printf("[ERROR] row>img_row || row<0 || col>img_column || col<img_column\n");
-				check_flag = 1;
+				printf("\n[ERROR] row>img_row || row<0 || col>img_column || col<img_column\n");
 				exit(1);
 			}
 			img_aft_sub[i][j] = img_aft[row][col];
 			if (img_aft_sub[i][j]>255 || img_aft_sub[i][j]<0){
-				printf("i: %d", i);
-				printf("j: %d", j);
 				printf("\n[ERROR] img_aft_sub[i][j]>255 || img_aft_sub[i][j]<00");
-				check_flag = 1;
 				exit(1);
 			}
-			
 		}
 	}
-	if (check_flag==1){
-		printf("img_aft_sub:\n");
-		print_array(img_aft_sub);
-		printf("\nEND\n");
-		exit(0);
-	}
-	
 	/* Mean of img_aft_sub */
 	for (i=0;i<Size;i++)
 	{
@@ -256,7 +232,6 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 		}
 	}
 	Mean_aft=mean(Aft_sub_sum); /* mean function is defined by macro (#define)   */ 
-	
 	/* Substract its mean, comopute its sqrt and sum */
 	for (i=0;i<Size;i++)
 	{
@@ -274,19 +249,18 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 	return coef;
 }
 
-/* Generate random number */
-double GRandom(void)
-{
-	double i = fmod(rand(),1000.0)/1000.0;
-	return i;
-}
+// /* Generate random number */
+// double GRandom(void)
+// {
+// 	double i = fmod(rand(),1000.0)/1000.0;
+// 	return i;
+// }
 
-/*
+
 double GRandom(void)
 {
     return rand() / (double)RAND_MAX;
 }
-*/
 
 void init_random_seed() {
     static int seeded = 0;
@@ -295,16 +269,4 @@ void init_random_seed() {
         srand((unsigned) t);
         seeded = 1;
     }
-}
-
-void print_array(int array[][Size]){
-	for (int i = 0; i < Size; i++)
-	{	
-		for (int j = 0; j < Size; j++)
-		{
-			printf("%d ",array[i][j]);
-		}
-		printf("\n");
-	}
-	return;
 }

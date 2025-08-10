@@ -11,11 +11,10 @@ class click_recorder:
             self.y = y
             print("coordinate(x,y): ", x, y)
             # 在影像上畫圓
-            cv.circle(img, (x, y), radius=5, color=(0, 0, 255), thickness=-1)
+            cv.circle(img, (x, y), radius=10, color=(0, 0, 255), thickness=3)
             # 在影像上寫文字
             cv.putText(img, f'{x},{y}', (x+10, y-10), 
                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-            # ⚠️ 要更新視窗，不然不會看到變化
             cv.imshow('img_1B_rec_temp', img)
 
     def callback_cam2(self, event, x, y, flags, img):
@@ -24,9 +23,8 @@ class click_recorder:
             self.y = y
             print("coordinate(x,y): ", x, y)
             # 在影像上畫圓
-            cv.circle(img, (x, y), radius=5, color=(0, 0, 255), thickness=-1)
+            cv.circle(img, (x, y), radius=10, color=(0, 0, 255), thickness=3)
             # 在影像上寫文字
             cv.putText(img, f'{x},{y}', (x+10, y-10), 
                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
-            # ⚠️ 要更新視窗，不然不會看到變化
             cv.imshow('img_2B_rec_temp', img)

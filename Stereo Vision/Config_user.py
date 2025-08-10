@@ -8,11 +8,13 @@ CAM_BUFFERSIZE_EN = 0
 CAM_AUTO_FOCAL_EN = 0
 CAM_AUTO_WB_EN = 0
 
+
 # STEP3 EN
 
 
 # test mode (0: in-plane, 1:out-of-plane)
 TEST_MODE_EN = 0
+TEST_SHOW_DBG_EN = 0
 TEST_ROTATE_IMG_EN = 0
 TEST_REC_IMG_EN = 1
 TEST_IMG_DIR = 'Target'

@@ -12,12 +12,11 @@ from function.algorithm.interpolation import get_cubic_coef_1B2B, get_cubic_coef
 from function.algorithm import hessian
 import function.calibration.image_calibration as img_cal
 import function.algorithm.DIC as DIC
-import Points2Plane
 from function.processing.image_processing import rotate_image
 from function.tool.click_tool import click_recorder
 
 print(f"pwd: {os.getcwd()}")
-print(f"WORKSPACE: {CF.WORKSPACE}")
+print(f"WORKSPACE: {CF.WORKSPACE}\n")
 
 # folder address
 #CF_user.TEST_IMG_DIR = 'Target20230901-1'
@@ -31,18 +30,25 @@ else:
 # reference image path
 file_name = f"{CF_user.LOAD_MIN}_{CF_user.LOAD_MAX}kg_image1.jpg"
 if CF_user.TEST_MODE_EN == 0:
-    img_1B_address = os.path.join(CF.IMAGE_TARGET_IN_CAM1_DIR, file_name)
-    img_2B_address = os.path.join(CF.IMAGE_TARGET_IN_CAM2_DIR, file_name)
+    img_1B_path = os.path.join(CF.IMAGE_TARGET_IN_CAM1_DIR, file_name)
+    img_2B_path = os.path.join(CF.IMAGE_TARGET_IN_CAM2_DIR, file_name)
 elif CF_user.TEST_MODE_EN == 1:
-    img_1B_address = os.path.join(CF.IMAGE_TARGET_OUT_CAM1_DIR, file_name)
-    img_2B_address = os.path.join(CF.IMAGE_TARGET_OUT_CAM2_DIR, file_name)
+    img_1B_path = os.path.join(CF.IMAGE_TARGET_OUT_CAM1_DIR, file_name)
+    img_2B_path = os.path.join(CF.IMAGE_TARGET_OUT_CAM2_DIR, file_name)
 else:
     print(f"[ERROR] TEST_MODE_EN={CF_user.TEST_MODE_EN} (Invalid!)")
-    
-print(f"img_1B_address: {img_1B_address}")
-print(f"img_2B_address: {img_2B_address}")
-img_1B = cv.imread(str(img_1B_address))
-img_2B = cv.imread(str(img_2B_address))
+
+# check path
+if not os.path.exists(img_1B_path):
+    print(f"[ERROR] img_1B_path not found: {img_1B_path}")
+if not os.path.exists(img_2B_path):
+    print(f"[ERROR] img_2B_path not found: {img_2B_path}")
+
+print(f"img_1B_path: {img_1B_path}")
+print(f"img_2B_path: {img_2B_path}\n")
+
+img_1B = cv.imread(str(img_1B_path))
+img_2B = cv.imread(str(img_2B_path))
 
 if CF_user.TEST_ROTATE_IMG_EN == 1:
     img_1B = rotate_image(img_1B, -90)
@@ -68,10 +74,11 @@ cv.imshow("img_1B_rec_temp", img_1B_rec_temp)
 cv.imshow("img_2B_rec_temp", img_2B_rec_temp)
 
 coor_1B = click_recorder()
-print('Please set a reference point')
+print('Please set a reference point in img_1B_rec_temp by clicking on the image.')
 cv.setMouseCallback('img_1B_rec_temp', coor_1B.callback_cam1, img_1B_rec_temp)
 cv.waitKey(0) 
-cv.destroyAllWindows() 
+cv.destroyAllWindows()
+print("done\n")
 
 ## Select corresponding points in right image
 cv.putText(img_2B_rec_temp, 'set a corresponding point on img_2B', (20, 60),\
@@ -81,11 +88,12 @@ cv.namedWindow("img_2B_rec_temp", cv.WINDOW_NORMAL)
 cv.imshow("img_1B_rec_temp", img_1B_rec_temp)
 cv.imshow("img_2B_rec_temp", img_2B_rec_temp)
 
-print('Please choose a reference point')
 coor_2B = click_recorder()
+print('Please set a reference point in img_2B_rec_temp by clicking on the image.')
 cv.setMouseCallback('img_2B_rec_temp', coor_2B.callback_cam2, img_2B_rec_temp)
 cv.waitKey(0) 
-cv.destroyAllWindows() 
+cv.destroyAllWindows()
+print("done\n")
 
 ## Read the image calibration file and obtain the projection matrix.
 cv_file = cv.FileStorage()
@@ -105,10 +113,10 @@ C1_B_y = coor_1B.y
 C2_B_x = coor_2B.x
 C2_B_y = coor_2B.y
 
-# C1_B_x = 466
-# C1_B_y = 267
-# C2_B_x = 167
-# C2_B_y = 262
+C1_B_x = 466
+C1_B_y = 267
+C2_B_x = 167
+C2_B_y = 262
 
 ## check if C1_B_x, y and C2_B_x, y not defined
 for var_name in ['C1_B_x', 'C1_B_y', 'C2_B_x', 'C2_B_y']:
@@ -119,6 +127,7 @@ print(f"C1_B_x: {C1_B_x}")
 print(f"C1_B_y: {C1_B_y}")
 print(f"C2_B_x: {C2_B_x}")
 print(f"C2_B_y: {C2_B_y}")
+print("")
 
 # Due to the large distance (disparity) between the two cameras, a translational distance is set to facilitate DIC in quickly finding corresponding points in the 2B image.
 translate_1B2B = C1_B_x - C2_B_x  # !!!!!!!!!!!!!!! 修改過
@@ -156,7 +165,7 @@ Sobel_1B_v = cv.Sobel(img_1B_rec_gray, cv.CV_64F, 1, 0)*0.125 # x方向
 # 填充額外數值以供插值係數計算: 2B_full
 img_2B_rec_gray_pad = np.pad(img_2B_rec_gray,[(1,2),(1,2)], mode = 'edge')
 row_2B, col_2B = img_2B_rec_gray.shape
-CubicCoef_1B2B_ALL, Cubic_Xinv = get_cubic_coef_1B2B(img_2B_rec_gray_pad, row_2B, col_2B)
+cubic_coef_2B_whole_img, Cubic_Xinv = get_cubic_coef_1B2B(img_2B_rec_gray_pad, row_2B, col_2B)
 
 # storage area
 C1B_points = np.zeros((side_len,side_len,2), dtype=int)
@@ -179,6 +188,8 @@ stress_out = np.zeros((side_len,side_len), dtype=float)
 ## Corrsponding points
 for P in range(-side_len_half,side_len_half+1,1):
     for L in range(-side_len_half,side_len_half+1,1):
+        # print(f"P:{P}")
+        # print(f"L:{L}")
         C1_B_x = int(CF_user.TEST_INTERVAL*L + C1_B_x)
         C1_B_y = int(CF_user.TEST_INTERVAL*P + C1_B_y)
         C1B_points[P+side_len_half][L+side_len_half][0] = C1_B_y
@@ -198,9 +209,14 @@ for P in range(-side_len_half,side_len_half+1,1):
         H_inv_1B2B, J_1B2B = hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B2B, IGrad_1B2B_u, IGrad_1B2B_v)
         
         # 從全圖插值表找插值(用於1B2B搜尋)
-        Length_1B2B = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B2B-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B2B-1))
-        CubicCoef_1B2B = CubicCoef_1B2B_ALL[C1_B_y-Length_1B2B:C1_B_y+Length_1B2B+1,\
-                                            C1_B_x-translate_1B2B-Length_1B2B:C1_B_x-translate_1B2B+Length_1B2B+1]
+        coef_max_range_1B2B_half = CF_user.TEST_SUBSET_SIZE_1B2B
+        coef_max_range_1B2B = int(2*(CF_user.TEST_SUBSET_SIZE_1B2B)+1)
+
+        # 計算img2上以猜測目標點為中心，計算插植係數
+        C2_B_x_guess = C1_B_x-translate_1B2B
+        # 以所選目標點p1(C1_B_x,C1_B_y)為中心 計算插植係數 求解p2(C2_B_x,C2_B_y)後注意 仍需要以p1為基準
+        cubic_coef_2B = cubic_coef_2B_whole_img[C1_B_y-coef_max_range_1B2B:C1_B_y+coef_max_range_1B2B+1,\
+                                                C2_B_x_guess-coef_max_range_1B2B:C2_B_x_guess+coef_max_range_1B2B+1]
         # 1B2B尋找對應點與2B之影像梯度
 
 
@@ -210,7 +226,7 @@ for P in range(-side_len_half,side_len_half+1,1):
                                 CF_user.TEST_SUBSET_SIZE_1B2B,\
                                 CF_user.TEST_SUBSET_SIZE_2B2A,\
                                 CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
-                                J_1B2B, CubicCoef_1B2B, translate_1B2B)
+                                J_1B2B, cubic_coef_2B, translate_1B2B, coef_max_range_1B2B_half)
 
         C2B_points[P+side_len_half][L+side_len_half][0] = C2_B_y
         C2B_points[P+side_len_half][L+side_len_half][1] = C2_B_x
@@ -252,17 +268,20 @@ for P in range(-side_len_half,side_len_half+1,1):
         # store img_2B_sub
         img_2B_sub_zone[P+side_len_half][L+side_len_half][:][:] = img_2B_sub
 
+
 # 指定陣列中心之追蹤點在2B之位置
 u2 = C2B_points[side_len_half][side_len_half][0]
 v2 = C2B_points[side_len_half][side_len_half][1]
 
+
+
 # ==================================================================
 
 """  決定擬合平面與追蹤點第4個點  """
-# 平面法向量
-nVector = Points2Plane.normalVector(WC_bef_zone, side_len)
-# 正規化
-nVector = nVector/np.linalg.norm(nVector)
+# #平面法向量
+# nVector = Points2Plane.normalVector(WC_bef_zone, side_len)
+# #正規化
+# nVector = nVector/np.linalg.norm(nVector)
 
 dis_sum = 0
 img_idx = 1
@@ -278,8 +297,14 @@ for img_idx in range(1,2,1):
         print(f"[ERROR] TEST_MODE_EN={CF_user.TEST_MODE_EN} (Invalid!)")
 
     # check path
+    if not os.path.exists(img_1A_path):
+        print(f"[ERROR] img_1A_path not found: {img_1A_path}")
+    if not os.path.exists(img_2A_path):
+        print(f"[ERROR] img_2A_path not found: {img_2A_path}")
     
-    
+    print(f"img_1A_path: {img_1A_path}")
+    print(f"img_2A_path: {img_2A_path}")
+
     img_1A = cv.imread(str(img_1A_path))
     img_2A = cv.imread(str(img_2A_path))
     
@@ -305,10 +330,10 @@ for img_idx in range(1,2,1):
     img_1A_rec_gray = cv.cvtColor(img_1A_rec, cv.COLOR_BGR2GRAY)
     img_2A_rec_gray = cv.cvtColor(img_2A_rec, cv.COLOR_BGR2GRAY)
     # 計算1A影像插值係數
-    # Length
-    Length = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1)+20)
-    Length_1B1A = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
-    Length_2B2A = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1)+0.5*(CF_user.TEST_SCAN_SIZE_2B2A-1))
+    # length_half
+    # length_half = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1)+20)
+    length_half_1B1A = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
+    length_half_2B2A = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1)+0.5*(CF_user.TEST_SCAN_SIZE_2B2A-1))
     
     start2 = time.time()
     
@@ -323,16 +348,16 @@ for img_idx in range(1,2,1):
             # Time start
             start = time.time()
             
-            # Length = Length_1B1A = Length_2B2A
-            Length = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
+            # length_half = length_half_1B1A = length_half_2B2A
+            length_half = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
             
             # Time start _1B1A
             start_1B1A = time.time()
             
             # 插值係數1B1A
-            Gvalue_1B1A = img_1A_rec_gray[int(C1_B_y)-Length-1:int(C1_B_y)+Length+3,\
-                                          int(C1_B_x)-Length-1:int(C1_B_x)+Length+3] 
-            Cubic_coef_1B1A = get_cubic_coef_1B1A(Cubic_Xinv, Length, Gvalue_1B1A)
+            Gvalue_1B1A = img_1A_rec_gray[int(C1_B_y)-length_half-1:int(C1_B_y)+length_half+3,\
+                                          int(C1_B_x)-length_half-1:int(C1_B_x)+length_half+3] 
+            Cubic_coef_1B1A = get_cubic_coef_1B1A(Cubic_Xinv, length_half, Gvalue_1B1A)
             # H, J
             H_inv_1B1A[:][:] = H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_1B1A[:][:][:] = J1B1A_all[P+side_len_half][L+side_len_half][:][:][:]
@@ -355,9 +380,9 @@ for img_idx in range(1,2,1):
             img_2B_sub = img_2B_sub_zone[P+side_len_half][L+side_len_half]
 
             # 插值係數2B2A      
-            Gvalue_2B2A = img_2A_rec_gray[int(C2_B_y)-Length-1:int(C2_B_y)+Length+3,\
-                                          int(C2_B_x)-Length-1:int(C2_B_x)+Length+3] 
-            Cubic_coef_2B2A = get_cubic_coef_2B2A(Cubic_Xinv, Length, Gvalue_2B2A)           
+            Gvalue_2B2A = img_2A_rec_gray[int(C2_B_y)-length_half-1:int(C2_B_y)+length_half+3,\
+                                          int(C2_B_x)-length_half-1:int(C2_B_x)+length_half+3] 
+            Cubic_coef_2B2A = get_cubic_coef_2B2A(Cubic_Xinv, length_half, Gvalue_2B2A)           
             # H, J
             H_inv_2B2A[:][:] = H2B2A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_2B2A[:][:][:] = J2B2A_all[P+side_len_half][L+side_len_half][:][:][:]         
@@ -389,7 +414,7 @@ for img_idx in range(1,2,1):
             disM[P+side_len_half][L+side_len_half][:] = WC_aft_zone[P+side_len_half][L+side_len_half][:] - WC_bef_zone[P+side_len_half][L+side_len_half][:]
             # out:z, in1:x(水平向右+), in2:y(垂直向下+)
             dis_out = WC_aft_zone[P+side_len_half][L+side_len_half][2]-WC_bef_zone[P+side_len_half][L+side_len_half][2]
-            dis_out2 = np.dot(disM[P+side_len_half][L+side_len_half],nVector)
+            #dis_out2 = np.dot(disM[P+side_len_half][L+side_len_half],nVector)
             dis_in_1 = WC_aft_zone[P+side_len_half][L+side_len_half][0]-WC_bef_zone[P+side_len_half][L+side_len_half][0]
             dis_in_2 = WC_aft_zone[P+side_len_half][L+side_len_half][1]-WC_bef_zone[P+side_len_half][L+side_len_half][1]
             dis_in_sum = np.sqrt(dis_in_1**2 + dis_in_2**2)
@@ -398,7 +423,7 @@ for img_idx in range(1,2,1):
                 print(np.round(dis_in_sum, 6))
                 dis_sum += dis_in_sum
             else: # out of plane
-                print(np.round(dis_out2, 6))
+                print(np.round(dis_out, 6))
                 dis_sum += dis_out
             
             img_1A_rec = cv.circle(img_1A_rec, (int(C1_A_x), int(C1_A_y)), 5,\
@@ -423,7 +448,6 @@ cv.waitKey(0)
 cv.destroyAllWindows()
 cv.imwrite('disField/img_1A_rec.jpg', img_1A_rec)
 cv.imwrite('disField/img_2A_rec.jpg', img_2A_rec)
-
 
 print('Average time per point: ', total_time/(CF_user.TEST_POINT_ARRAY*10))
 print('Average dis:',dis_sum/(img_idx*side_len*side_len))

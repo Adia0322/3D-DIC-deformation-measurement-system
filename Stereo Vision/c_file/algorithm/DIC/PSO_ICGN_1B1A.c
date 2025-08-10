@@ -5,23 +5,23 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-/* �ƾǦ� */
+
 #define square(x) ((x)*(x))
 #define mean(x) ((x)/(Size*Size))
-/* �Ϲ��]�w */
+
 #define img_row 480 
 #define img_column 640 
-/* DIC �ѼƳ]�w */ 
-#define Size 31  /* ��Τl���X��� */ 
+
+#define Size 31
 #define SizeHalf (Size-1)/2 
-#define scan 31        /* ��α��y�ϰ���� */ 
-/* PSO �ѼƳ]�w */ 
+#define scan 31
+
 #define Population 20 
 #define Dimension 2
 #define Iteration 4
 #define Iter_reciprocal (1.0/Iteration)
-#define ArraySize_Pini 3      /* �]�wn*n��}�I����l�T�w��m(n���_��)�A�Ϫ�l�j�M��[���áA���`�NPopulation������!! */ 
-#define FixedPointRange scan/2   /* �]�wn*n��}�I���d�� (��}���) */ 
+#define ArraySize_Pini 3
+#define FixedPointRange scan/2
 #define ArrayInterval (FixedPointRange)/(ArraySize_Pini-1) 
 #define Array_Start ArrayInterval*(ArraySize_Pini-1)/2
 #define Boundary_Length 0.5*(scan-1)
@@ -38,32 +38,28 @@
 double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_column],\
                      int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[]);
 double GRandom(void);
+void init_random_seed();
 
 /* construct C matrix (Main)  */ 
 void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
           double Mean_bef[], int Object_point[], int Displacement[], double CoefValue[])
 {
-	int i, j, k, m, x, y, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0; /*  */ 
+	int i, j, k, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0; /*  */ 
 	int max_index = 0; 
 	double Pbest[Population][Dimension], Gbest[Dimension];   /* Gbest[0] = x, Gbest[1]  = y */
 	double upper_bounds[2]={Boundary_Length, Boundary_Length}, lower_bounds[2]={-Boundary_Length, -Boundary_Length}; 
 	double Pi[Population][Dimension], Vi[Population][Dimension];
-	double Cost_initial, Cost, max_value_Gbest=-1e+9, max_value_Pbest[Population]; /* �]�wmax_value_Gbest�ɼƭȺɶq�p */ 
+	double Cost_initial, Cost, max_value_Gbest=-1e+9, max_value_Pbest[Population];
 	double Gbest_u, Gbest_v;
 	
 	// initialize random var (only do one time)
-	static int seeded = 0;
-    if (!seeded) {
-        srand(time(NULL));
-        seeded = 1;
-    }
+	init_random_seed();
 	
-	for (i=0;i<Population;i++) /* i: �I�s�� */ 
+	for (i=0;i<Population;i++)
 	{
-		/* �]�w�T�w�t�׻P��m���I �ƶq:(ArraySize_Pini)*(ArraySize_Pini) */ 
-		if (i<(ArraySize_Pini*ArraySize_Pini))  /* �T�{�ɤl�s���p����T�w���ɤl�ƶq */ 
+		if (i<(ArraySize_Pini*ArraySize_Pini))
 		{
-			Vi[i][0] = Vini*(GRandom()*2-1); /* �гy -1~1 ���p��  note: Vini*(-1.0 ~ 1.0)  */
+			Vi[i][0] = Vini*(GRandom()*2-1);
 			Vi[i][1] = Vini*(GRandom()*2-1);
 			if (Count_u == ArraySize_Pini)
 			{
@@ -73,17 +69,17 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 			Pi[i][0] = -Array_Start + Count_u*ArrayInterval;
 			Pi[i][1] = -Array_Start + Count_v*ArrayInterval;
 			
-			Pbest[i][0] = Pi[i][0]; /* �N��i���I��u�Bv��(j=0��u, j=1��v)�����A�b��l��Pi[i][j]�Y���ӤH�g��̨Φ�mPbest[i][j] */
+			Pbest[i][0] = Pi[i][0];
 			Pbest[i][1] = Pi[i][1];
 			
 			/* Calculate SSD (sum of squared differences) */
-			Pi_u_ini = (int)Pi[i][0]; /* �j���૬�u�h���p�ơA���|�|�ˤ��J */
+			Pi_u_ini = (int)Pi[i][0];
 			Pi_v_ini = (int)Pi[i][1];
 			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point,\
 			                             img_aft, img_aft_sub, img_bef_sub, Mean_bef);
 			
 			/* Individual best value */
-			max_value_Pbest[i] = Cost_initial; /* �@�}�l�ӤH�̨θg��u��1�� */
+			max_value_Pbest[i] = Cost_initial;
 			
 			/* Global best value */
 			if (Cost_initial>max_value_Gbest)
@@ -100,31 +96,30 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 		
 		else
 		{
-			/* �]�w�H���t�׻P��m���I */
 			for (j=0;j<Dimension;j++)
 			{
 				Vi[i][j] = Vini*(GRandom()*2-1); /* Vini*(-1.0 ~ 1.0) */
 				Pi[i][j] = lower_bounds[j] + 0.5*Boundary_Length +\
-				           0.5*GRandom()*(upper_bounds[j]-lower_bounds[j]); /* �`�N!! Vi�BPi���B�I�ƫ��A */
+				           0.5*GRandom()*(upper_bounds[j]-lower_bounds[j]);
 				
-				Pbest[i][j] = Pi[i][j]; /* �N��i���I��u�Bv��(j=0��u, j=1��v)�����A�b��l��Pi[i][j]�Y���ӤH�g��̨Φ�mPbest[i][j] */
+				Pbest[i][j] = Pi[i][j];
 			}
 			/* Calculate SSD (sum of squared differences) */
-			Pi_u_ini = (int)Pi[i][0]; /* �j���૬�u�h���p�ơA���|�|�ˤ��J */ 
+			Pi_u_ini = (int)Pi[i][0];
 			Pi_v_ini = (int)Pi[i][1];
 			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point,\
-			                             img_aft, img_aft_sub, img_bef_sub, Mean_bef);  /* �`�N!! �o�̤���Dimension���ܤơA�Y�n�󴫺��׽Ъ`�N!!!*/ 
+			                             img_aft, img_aft_sub, img_bef_sub, Mean_bef);
 			
 			/* Individual best value */
-			max_value_Pbest[i] = Cost_initial; /* �@�}�l�ӤH�̨θg��u��1�� */ 
+			max_value_Pbest[i] = Cost_initial;
 			
 			/* Global best value */
 			if (Cost_initial>max_value_Gbest)
 			{
-				max_value_Gbest = Cost_initial;  /* max_value_Gbest���s��̨Φ�m���ȡA�N�b����C�����N����s */
-				max_index = i; /* max_index���s��̨Φ�m���I�s���A�s��̨Φ�m: (u,v) = (Pi[max_index,0] , Pi[max_index,1]) */
+				max_value_Gbest = Cost_initial;
+				max_index = i;
 				
-				Gbest[0] = Pi[max_index][0]; /* Gbest[0]���ܸs��̨Φ�mx�ȡAGbest[1]�h��y�ȡC   �`�N!! �o�̤���Dimension���ܤơA�Y�n�󴫺��׽Ъ`�N!!!*/
+				Gbest[0] = Pi[max_index][0];
 				Gbest[1] = Pi[max_index][1];
 			}
 		}
@@ -143,7 +138,7 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 				            Social_factor*GRandom()*(Gbest[j]-Pi[i][j]);
 				if (Vi[i][j]>Vmax)
 				{
-					Vi[i][j] = Vmax; /* ����t�פW�� */ 
+					Vi[i][j] = Vmax;
 				}
 				if (Vi[i][j]<-Vmax)
 				{
@@ -170,7 +165,7 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 			                     img_aft_sub, img_bef_sub, Mean_bef);
 			
 			/* Individual best value */
-			if (Cost>max_value_Pbest[i]) /* �C�����NPbest��s���ӤH�g��̨Φ�m */
+			if (Cost>max_value_Pbest[i])
 			{
 				max_value_Pbest[i] = Cost;
 				Pbest[i][0]=Pi[i][0];
@@ -204,19 +199,28 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 
 
 /*============================ Functions ==============================*/
-/* �̾� ZNCC(zero-normalized cross-correlation)�����Y�Ʒǫh �p������Y�� (-1 ~ +1) */
 double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_column],\
                      int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[])   
 {
 	int i, j, Aft_sub_sum=0;
+	int row, col;
 	double Mean_aft, Sum_Numerator=0.0, Sum_Denominator_bef=0.0, Sum_Denominator_aft=0.0, coef=0.0;
 	/* Construct img_aft_sub */
 	for (i=0;i<Size;i++) 
 	{
 		for (j=0;j<Size;j++)
 		{
-			img_aft_sub[i][j] =\
-			 img_aft[i - SizeHalf + Pi_u + Object_point[0]][j - SizeHalf + Pi_v + Object_point[1]]; /*   */ 
+			row = i - SizeHalf + Pi_u + Object_point[0];
+			col = j - SizeHalf + Pi_v + Object_point[1];
+			if(row>=img_row || row<0 || col>=img_column || col<0){
+				printf("\n[ERROR] row>img_row || row<0 || col>img_column || col<img_column\n");
+				exit(1);
+			}
+			img_aft_sub[i][j] = img_aft[row][col];
+			if (img_aft_sub[i][j]>255 || img_aft_sub[i][j]<0){
+				printf("\n[ERROR] img_aft_sub[i][j]>255 || img_aft_sub[i][j]<00");
+				exit(1);
+			}
 		}
 	}
 	/* Mean of img_aft_sub */
@@ -238,20 +242,31 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 			Sum_Denominator_aft+=square(img_aft_sub[i][j] - Mean_aft);
 		}
 	}
+	if(Sum_Denominator_bef==0 || Sum_Denominator_aft==0){
+		return 0.0;
+	}
 	coef = Sum_Numerator/(sqrt(Sum_Denominator_bef*Sum_Denominator_aft));
 	return coef;
 }
 
-/* Generate random number */
-double GRandom(void)
-{
-	double i = fmod(rand(),1000.0)/1000.0;
-	return i;
-}
+// /* Generate random number */
+// double GRandom(void)
+// {
+// 	double i = fmod(rand(),1000.0)/1000.0;
+// 	return i;
+// }
 
-/*
+
 double GRandom(void)
 {
     return rand() / (double)RAND_MAX;
 }
-*/
+
+void init_random_seed() {
+    static int seeded = 0;
+    if (!seeded) {
+        time_t t = time(NULL);
+        srand((unsigned) t);
+        seeded = 1;
+    }
+}
