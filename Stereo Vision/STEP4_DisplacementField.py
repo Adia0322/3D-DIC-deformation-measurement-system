@@ -108,15 +108,15 @@ side_len = int(np.sqrt(CF_user.TEST_POINT_ARRAY))
 side_len_half = int((side_len-1)/2)
 
 # start point : (C1_B_x, C1_B_y)
-C1_B_x = coor_1B.x
-C1_B_y = coor_1B.y
-C2_B_x = coor_2B.x
-C2_B_y = coor_2B.y
+# C1_B_x = coor_1B.x
+# C1_B_y = coor_1B.y
+# C2_B_x = coor_2B.x
+# C2_B_y = coor_2B.y
 
 C1_B_x = 466
-C1_B_y = 267
-C2_B_x = 167
-C2_B_y = 262
+C1_B_y = 274
+C2_B_x = 166
+C2_B_y = 274
 
 ## check if C1_B_x, y and C2_B_x, y not defined
 for var_name in ['C1_B_x', 'C1_B_y', 'C2_B_x', 'C2_B_y']:
@@ -184,10 +184,16 @@ disM_in_2 = np.zeros((side_len,side_len), dtype=float)
 stress_in = np.zeros((side_len,side_len), dtype=float)
 stress_out = np.zeros((side_len,side_len), dtype=float)
 
+print(f"C1_B_x: {C1_B_x}")
+print(f"C1_B_y: {C1_B_y}")
+print(f"C2_B_x: {C2_B_x}")
+print(f"C2_B_y: {C2_B_y}")
+print("")
 
 ## Corrsponding points
-for P in range(-side_len_half,side_len_half+1,1):
+for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
     for L in range(-side_len_half,side_len_half+1,1):
+        print(f"C2_B_y: {C2_B_y}")
         # print(f"P:{P}")
         # print(f"L:{L}")
         C1_B_x = int(CF_user.TEST_INTERVAL*L + C1_B_x)
@@ -209,14 +215,14 @@ for P in range(-side_len_half,side_len_half+1,1):
         H_inv_1B2B, J_1B2B = hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B2B, IGrad_1B2B_u, IGrad_1B2B_v)
         
         # 從全圖插值表找插值(用於1B2B搜尋)
-        coef_max_range_1B2B_half = CF_user.TEST_SUBSET_SIZE_1B2B
-        coef_max_range_1B2B = int(2*(CF_user.TEST_SUBSET_SIZE_1B2B)+1)
+        coef_max_range_1B2B_half = int((CF_user.TEST_SUBSET_SIZE_1B2B)*2)
 
         # 計算img2上以猜測目標點為中心，計算插植係數
-        C2_B_x_guess = C1_B_x-translate_1B2B
+        C2_B_x_guess = int(C1_B_x-translate_1B2B)
+        C2_B_y_guess = int(C1_B_y)
         # 以所選目標點p1(C1_B_x,C1_B_y)為中心 計算插植係數 求解p2(C2_B_x,C2_B_y)後注意 仍需要以p1為基準
-        cubic_coef_2B = cubic_coef_2B_whole_img[C1_B_y-coef_max_range_1B2B:C1_B_y+coef_max_range_1B2B+1,\
-                                                C2_B_x_guess-coef_max_range_1B2B:C2_B_x_guess+coef_max_range_1B2B+1]
+        cubic_coef_2B = cubic_coef_2B_whole_img[C2_B_y_guess-coef_max_range_1B2B_half:C2_B_y_guess+coef_max_range_1B2B_half+1,\
+                                                C2_B_x_guess-coef_max_range_1B2B_half:C2_B_x_guess+coef_max_range_1B2B_half+1]
         # 1B2B尋找對應點與2B之影像梯度
 
 
@@ -267,14 +273,23 @@ for P in range(-side_len_half,side_len_half+1,1):
         J2B2A_all[P+side_len_half][L+side_len_half][:][:][:] = J_2B2A[:][:][:]
         # store img_2B_sub
         img_2B_sub_zone[P+side_len_half][L+side_len_half][:][:] = img_2B_sub
+        
+        img_1A_rec = cv.circle(img_1B_rec, (int(C1_B_x), int(C1_B_y)), 5,\
+                                (0, 255, 255), 1)  
+        img_2A_rec = cv.circle(img_2B_rec, (int(C2_B_x), int(C2_B_y)), 5,\
+                                (0, 255, 255), 1)  
 
 
 # 指定陣列中心之追蹤點在2B之位置
 u2 = C2B_points[side_len_half][side_len_half][0]
 v2 = C2B_points[side_len_half][side_len_half][1]
 
+cv.imshow('img_1B_rec', img_1B_rec)
+cv.imshow('img_2B_rec', img_2B_rec)
+cv.waitKey(0)
+cv.destroyAllWindows()
 
-
+breakpoint()
 # ==================================================================
 
 """  決定擬合平面與追蹤點第4個點  """
@@ -332,8 +347,8 @@ for img_idx in range(1,2,1):
     # 計算1A影像插值係數
     # length_half
     # length_half = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1)+20)
-    length_half_1B1A = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
-    length_half_2B2A = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1)+0.5*(CF_user.TEST_SCAN_SIZE_2B2A-1))
+    # length_half_1B1A = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
+    # length_half_2B2A = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1)+0.5*(CF_user.TEST_SCAN_SIZE_2B2A-1))
     
     start2 = time.time()
     
@@ -446,8 +461,6 @@ cv.imshow('img_1A_rec', img_1A_rec)
 cv.imshow('img_2A_rec', img_2A_rec)
 cv.waitKey(0)
 cv.destroyAllWindows()
-cv.imwrite('disField/img_1A_rec.jpg', img_1A_rec)
-cv.imwrite('disField/img_2A_rec.jpg', img_2A_rec)
 
 print('Average time per point: ', total_time/(CF_user.TEST_POINT_ARRAY*10))
 print('Average dis:',dis_sum/(img_idx*side_len*side_len))

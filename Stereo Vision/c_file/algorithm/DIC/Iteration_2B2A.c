@@ -13,6 +13,7 @@
 double Bicubic(double x, double y, double A_re[][4]);
 
 /* =============== Construct Correlation[] ===================*/
+__declspec(dllexport)
 void Gvalue_g(double Gvalue_g[][Size], double Cubic_coef[2*Length+1][2*Length+1][16],\
  double Warp[3][3])
 {
@@ -83,6 +84,7 @@ void Gvalue_g(double Gvalue_g[][Size], double Cubic_coef[2*Length+1][2*Length+1]
 }
 
 /* ================ Compute Correlation_sum =================*/
+__declspec(dllexport)
 void CorrSum(double Correlation_sum[6], double dF_dP[Size][Size],\
  double J_1B1A[Size][Size][6])
 {

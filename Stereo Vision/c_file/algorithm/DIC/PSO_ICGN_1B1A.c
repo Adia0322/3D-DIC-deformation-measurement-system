@@ -40,7 +40,8 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 double GRandom(void);
 void init_random_seed();
 
-/* construct C matrix (Main)  */ 
+/* construct C matrix (Main)  */
+__declspec(dllexport)
 void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
           double Mean_bef[], int Object_point[], int Displacement[], double CoefValue[])
 {

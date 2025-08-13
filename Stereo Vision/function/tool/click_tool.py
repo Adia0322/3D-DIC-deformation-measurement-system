@@ -11,7 +11,7 @@ class click_recorder:
             self.y = y
             print("coordinate(x,y): ", x, y)
             # 在影像上畫圓
-            cv.circle(img, (x, y), radius=10, color=(0, 0, 255), thickness=3)
+            cv.circle(img, (x, y), radius=5, color=(0, 0, 255), thickness=-1)
             # 在影像上寫文字
             cv.putText(img, f'{x},{y}', (x+10, y-10), 
                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
@@ -23,7 +23,7 @@ class click_recorder:
             self.y = y
             print("coordinate(x,y): ", x, y)
             # 在影像上畫圓
-            cv.circle(img, (x, y), radius=10, color=(0, 0, 255), thickness=3)
+            cv.circle(img, (x, y), radius=5, color=(0, 0, 255), thickness=-1)
             # 在影像上寫文字
             cv.putText(img, f'{x},{y}', (x+10, y-10), 
                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)

@@ -42,7 +42,8 @@ void init_random_seed();
 void print_array(int array[][Size]);
 
 /* search (Main)  */
-__declspec(dllexport) void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
+__declspec(dllexport)
+void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
           double Mean_bef[], int Object_point[], int Displacement[], double CoefValue[])
 {
 	int i, j, k, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0;
