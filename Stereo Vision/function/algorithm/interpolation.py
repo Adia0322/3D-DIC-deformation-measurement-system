@@ -1,31 +1,23 @@
-import numpy as np
+
 import Config as CF
 
-def get_cubic_coef_1B2B(img, row, col):
-    Cubic_X = np.array([(1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1),\
-                  (1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0),\
-                  (1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1),\
-                  (1, 2, 4, 8, -1, -2, -4, -8, 1, 2, 4, 8, -1, -2, -4, -8),\
-                  (1, -1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
-                  (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
-                  (1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
-                  (1, 2, 4, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
-                  (1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1),\
-                  (1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0),\
-                  (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),\
-                  (1, 2, 4, 8, 1, 2, 4, 8, 1, 2, 4, 8, 1, 2, 4, 8),\
-                  (1, -1, 1, -1, 2, -2, 2, -2, 4, -4, 4, -4, 8, -8, 8, -8),\
-                  (1, 0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 8, 0, 0, 0),\
-                  (1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8),\
-                  (1, 2, 4, 8, 2, 4, 8, 16, 4, 8, 16, 32, 8, 16, 32, 64)], dtype=int)
-    cubic_Xinv = np.linalg.inv(Cubic_X)
-    coef = np.zeros((row,col,16), dtype=float)
-    for i in range(0,row,1):
-        for j in range(0,col,1):
-            gray_value = img[i:i+4, j:j+4]
-            gray_value = np.reshape(gray_value, (16,1), order='F')
-            coef[i, j, ...] = np.transpose(cubic_Xinv.dot(gray_value))
-    return coef, cubic_Xinv
+
+# ## 雙線性
+# def get_subpixel_value_cv(img, x, y):
+#     import cv2 as cv
+#     # getRectSubPix 取單個像素 (1x1 patch)
+#     patch = cv.getRectSubPix(img, (1, 1), (x, y))  # (x, y) 為中心座標
+#     return patch[0, 0]
+
+## cubic
+def get_subpixel_value_cubic(img, x, y):
+    # map_coordinates 需要 (row, col) 座標順序
+    import numpy as np
+    from scipy.ndimage import map_coordinates
+    coords = np.array([[y], [x]])
+    val = map_coordinates(img, coords, order=3, mode='reflect')
+    return val[0]
+
 
 def get_cubic_coef_1B1A(cubic_Xinv, Length, img):
     import numpy as np
@@ -96,6 +88,7 @@ def get_cubic_coef_2B2A(cubic_Xinv, Length, img):
 
 
 def get_cubic_value(u, v, coefficient):
+    import numpy as np
     U = np.array([1, u, u*u, u*u*u], dtype=float)
     V = np.array([1, v, v*v, v*v*v], dtype=float)
     gray_value = U.dot(coefficient.dot(np.transpose(V))) # U*coefficient*V
@@ -111,3 +104,29 @@ def get_cubic_value_spline(block4x4, x, y):
     # 再對結果做 y 方向的三次樣條
     value = CubicSpline(range(4), temp)(y)
     return value
+
+# def get_cubic_coef_1B2B(img, row, col):
+#     Cubic_X = np.array([(1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1),\
+#                   (1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0),\
+#                   (1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1),\
+#                   (1, 2, 4, 8, -1, -2, -4, -8, 1, 2, 4, 8, -1, -2, -4, -8),\
+#                   (1, -1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
+#                   (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
+#                   (1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
+#                   (1, 2, 4, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
+#                   (1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1),\
+#                   (1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0),\
+#                   (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),\
+#                   (1, 2, 4, 8, 1, 2, 4, 8, 1, 2, 4, 8, 1, 2, 4, 8),\
+#                   (1, -1, 1, -1, 2, -2, 2, -2, 4, -4, 4, -4, 8, -8, 8, -8),\
+#                   (1, 0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 8, 0, 0, 0),\
+#                   (1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8),\
+#                   (1, 2, 4, 8, 2, 4, 8, 16, 4, 8, 16, 32, 8, 16, 32, 64)], dtype=int)
+#     cubic_Xinv = np.linalg.inv(Cubic_X)
+#     coef = np.zeros((row,col,16), dtype=float)
+#     for i in range(0,row,1):
+#         for j in range(0,col,1):
+#             gray_value = img[i:i+4, j:j+4]
+#             gray_value = np.reshape(gray_value, (16,1), order='F')
+#             coef[i, j, ...] = np.transpose(cubic_Xinv.dot(gray_value))
+#     return coef, cubic_Xinv

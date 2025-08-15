@@ -1,22 +1,26 @@
 ## ===== DIC (digital image correlation) ===== ##
-from function.algorithm.interpolation import get_cubic_value
+from function.algorithm.interpolation import get_subpixel_value_cubic
 import numpy as np
 from ctypes import cdll, c_int, c_double, POINTER
 import cv2 as cv
 import Config as CF
 import Config_user as CF_user
-def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
-                   TEST_SUBSET_SIZE_1B2B,\
-                   TEST_SUBSET_SIZE_2B2A,\
-                    TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
-                   J_1B2B, cubic_coef_2B, translate_1B2B, coef_max_range_1B2B_half):
+def find_pt_info_1B2B(img_1B,
+                      img_2B,
+                      C1_B_x, C1_B_y,
+                      TEST_SUBSET_SIZE_1B2B,
+                      TEST_SUBSET_SIZE_2B2A,
+                      TEST_SCAN_SIZE_1B2B,
+                      H_inv_1B2B,
+                      J_1B2B,
+                      translate_1B2B):
     ## Initial setting ##
     Size = TEST_SUBSET_SIZE_1B2B
     # 子集合之半邊長
     Len = int(0.5*(Size-1)) 
     # half size of coef_max_range_1B2B (get the center of warp function)
-
-    coef_max_range_1B2B = (coef_max_range_1B2B_half*2)+1
+    C2_B_x_guess = C1_B_x - translate_1B2B
+    C2_B_y_guess = C1_B_y
     img_bef = np.array(img_1B, dtype=np.int32)
     img_aft = np.array(img_2B, dtype=np.int32)
 
@@ -66,8 +70,8 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
         
     #=================== 位移計算完成 計算結果在Displacement =========================#
     # Integer displacement for subpixels algorithm
-    Int_y = Displacement[0] # y
-    Int_x = Displacement[1] # x
+    int_dis_y = Displacement[0] # y
+    int_dis_x = Displacement[1] # x
 
     """============================ Precomputation ==========================="""
     # define Incremental displacement vector: delta_P
@@ -79,23 +83,23 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     yy_inc = 0.01
     delta_P = np.array([x_inc, xx_inc, xy_inc, y_inc, yx_inc, yy_inc], dtype=np.float64)
 
-    # Incremental warp function coefficient
-    warp_inc_coef = np.array([(1+xx_inc, xy_inc, x_inc),\
-                              (yx_inc, 1+yy_inc, y_inc),\
-                              (0, 0, 1)], dtype=np.float64)
+    # # Incremental warp function coefficient
+    # warp_inc_coef = np.array([(1+xx_inc, xy_inc, x_inc),\
+    #                           (yx_inc, 1+yy_inc, y_inc),\
+    #                           (0, 0, 1)], dtype=np.float64)
     
     # Reference subset (Simplied: delta_p = 0) !!!!!!!!
-    Gvalue_ref_sub = img_bef_sub
+    ref_matrix_f = img_bef_sub
     # Mean of Reference subset 
-    f_average = np.mean(Gvalue_ref_sub)
+    f_average = np.mean(ref_matrix_f)
     # Delta_f
-    delta_f = np.sqrt(np.sum(np.square(Gvalue_ref_sub-f_average)))
+    delta_f = np.std(ref_matrix_f, ddof=0)
 
     # define displacement vector: P
-    x = Int_x # obtain by PSO
+    x = int_dis_x # obtain by PSO
     xx = 0
     xy = 0
-    y = Int_y # obtain by PSO
+    y = int_dis_y # obtain by PSO
     yx = 0
     yy = 0
     # warp function coefficient of deformed subset
@@ -107,135 +111,74 @@ def find_pt_info_1B2B(img_1B, img_2B, C1_B_x, C1_B_y,\
     cnt = 0
     eps = 1e-8
     limit = np.sqrt(np.square(delta_P[0]) + np.square(delta_P[1]*Len)+\
-                           np.square(delta_P[2]*Len) + np.square(delta_P[3])+\
-                           np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
-    while limit > 0.0001 and cnt < 20:
+                    np.square(delta_P[2]*Len) + np.square(delta_P[3])+\
+                    np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
+    while limit > 0.0001 and cnt < 30:
         # Average gray value of deformed subset points(with interpolation)
-        #print(f"cnt: {cnt}")
-        Gvalue_g = np.zeros((Size,Size), dtype=np.float64)
-        for i in range(0,Size,1):
-            for j in range(0,Size,1):
-                # translate rigid subset to the position provided by PSO
-                position = np.transpose(np.array([i-Len, j-Len, 1], dtype=np.float64))
-                position_warped = warp_aft_coef.dot(position) # relative cor to initial guess
-                # convert subset cor to coefficient cor
-                coef_idx_row = coef_max_range_1B2B_half + int(np.floor(position_warped[1])) # 
-                coef_idx_col = coef_max_range_1B2B_half + int(np.floor(position_warped[0])) #
-                # A: cubic coefficient in coef_idx_row, coef_idx_col
-                # Find the coefficient in lookup table
-                if coef_idx_row>=coef_max_range_1B2B:
-                    coef_idx_row = coef_max_range_1B2B-1
-                    breakpoint()
-                if coef_idx_row<0:
-                    coef_idx_row = 0
-                    breakpoint()
-                if coef_idx_col>=coef_max_range_1B2B:
-                    coef_idx_col = coef_max_range_1B2B-1
-                    breakpoint()
-                if coef_idx_col<0:
-                    coef_idx_col = 0
-                    breakpoint()
-                if CF_user.TEST_SHOW_DBG_EN == 1:
-                    print(f"position: {position}")
-                    print(f"position_warped: {position_warped}")
-                    print(f"warp_aft_coef: {warp_aft_coef}")
-                    print(f"coef_idx_col: {coef_idx_col}")
-                    print(f"coef_idx_row is out of bound: coef_idx_row:{coef_idx_row}")
-                    print(f"cnt={cnt}")
-                    print(f"set coef_idx_row to: {coef_idx_row}")
-
-                A = cubic_coef_2B[coef_idx_row][coef_idx_col][:] # 加上Length後表示起點為子集合中心開始算
-                A_re = np.reshape(A, (4,4), order='F')
-                # Calculate interpolation and store in matrix Gvalue_g[][]
-                Gvalue_g[i][j] = get_cubic_value(position_warped[1]-np.floor(position_warped[1]),\
-                                                 position_warped[0]-np.floor(position_warped[0]), A_re)
+        target_matrix_g = np.zeros((Size,Size), dtype=np.float64)
+        for y1 in range(0,Size,1):
+            for x1 in range(0,Size,1):
+                position = np.transpose(np.array([x1-Len, y1-Len, 1], dtype=np.float64))
+                position_warp = warp_aft_coef.dot(position)
+                local_x = position_warp[0]
+                local_y = position_warp[1]
+                target_matrix_g[y1][x1] = get_subpixel_value_cubic(img_2B, C2_B_x_guess + local_x, C2_B_y_guess + local_y)
         
         # compute g_average
-        g_average = np.mean(Gvalue_g)
+        g_average = np.mean(target_matrix_g)
 
-        # compute delata_g
-        delta_g = np.sqrt(np.sum(np.square(Gvalue_g-g_average)))
+        # compute delata_g (standard deviation)
+        delta_g = np.std(target_matrix_g, ddof=0)
         
-        Corelation_sum = np.zeros(6, dtype=np.float64)
-        ratio = delta_f / (delta_g + eps)
-        dF_dP = (Gvalue_ref_sub - f_average) - ratio*(Gvalue_g - g_average)
-        for i in range(0,Size,1):
-            for j in range(0,Size,1):
-                Corelation_sum += np.transpose(J_1B2B[i][j][:])*dF_dP[i][j]
+        corelation_sum = np.zeros(6, dtype=np.float64) 
+        eps = 1e-12
+        ratio = delta_f / (delta_g + eps) # prevent zero
+        residual_F_G = (ref_matrix_f - f_average) - ratio*(target_matrix_g - g_average)
+        for y2 in range(0,Size,1):
+            for x2 in range(0,Size,1):
+                corelation_sum += np.transpose(J_1B2B[y2][x2][:])*residual_F_G[y2][x2]
 
-        delta_P = -H_inv_1B2B.dot(Corelation_sum)
+        corelation_sum = corelation_sum.reshape(6,1) 
+        delta_P = (-H_inv_1B2B @ corelation_sum).flatten() # flatten turn 2d array to 1d array to get scalar
         # Update limit (if limit is enough small, then quit)
-        limit = np.sqrt(np.square(delta_P[0]) + np.square(delta_P[1]*Len)+\
-                        np.square(delta_P[2]*Len) + np.square(delta_P[3])+\
+        limit = np.sqrt(np.square(delta_P[0]) + np.square(delta_P[1]*Len)+
+                        np.square(delta_P[2]*Len) + np.square(delta_P[3])+
                         np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
         
-        warp_inc_coef = np.array([(1+delta_P[1], delta_P[2], delta_P[0]),\
-                                  (delta_P[4], 1+delta_P[5], delta_P[3]),\
-                                  (0, 0, 1)], dtype=np.float64)
+        warp_inc_coef = np.array([[1+delta_P[1], delta_P[2], delta_P[0]],
+                                  [delta_P[4], 1+delta_P[5], delta_P[3]],
+                                  [0, 0, 1]], dtype=np.float64)
         
         warp_inc_coef_inv = np.linalg.inv(warp_inc_coef)
-        # 更新warp function
-        warp_aft_coef = warp_aft_coef.dot(warp_inc_coef_inv)
-        # 計次數
+        # update warp function
+        warp_aft_coef = warp_aft_coef @ warp_inc_coef_inv
+        # count
         cnt += 1
-        
+    print(f"limit_final={limit}")
     # Subpixel displacement
     X = warp_aft_coef[0][2] # 水平
     Y = warp_aft_coef[1][2] # 垂直
-    C2_B_y = Y + C1_B_y
-    C2_B_x = X + C1_B_x - translate_1B2B
+    C2_B_y = Y + C2_B_y_guess
+    C2_B_x = X + C2_B_x_guess
     
-    """ Calculate new gray value and image gradient of C2_B image: for 2B2A """
-    # 計算小數座標之灰階值，並以SOBEL計算影像梯度(image gradient)
-    Size_TEMP = TEST_SUBSET_SIZE_2B2A + 2 # No value in boundary, so we allocated 2 more elements in x, y direction,...
-    Len_TEMP = int(0.5*(Size_TEMP-1)) # ...make sure we have (Size)*(Size) size matrix.
-    warp_aft_coef = np.array([(1, 0, X), (0, 1, Y), (0, 0, 1)], dtype=np.float64)
-    Gvalue_TEMP = np.zeros(((Size_TEMP),(Size_TEMP)), dtype=np.float64)
-    for i in range(0,Size_TEMP,1): # Size需要多2個元素，因為稍後需計算新的Sobel影像梯度
-        for j in range(0,Size_TEMP,1):
-            position = np.transpose(np.array([i-Len_TEMP, j-Len_TEMP, 1], dtype=np.float64))
-            position_warped = warp_aft_coef.dot(position)
-            ## 查表以尋找目標點之插值係數(位移記得取整數)
-            # 檢查 position_warped 是否有效
-            if not np.all(np.isfinite(position_warped)):
-                print("[ERROR] position_warped is not finite!")
-                continue
-            coef_idx_row = coef_max_range_1B2B_half + int(np.floor(position_warped[0]))
-            coef_idx_col = coef_max_range_1B2B_half + int(np.floor(position_warped[1]))
-            # 邊界檢查 
-            if coef_idx_row < 0:
-                coef_idx_row = 0
-                breakpoint()
-            if coef_idx_row >= coef_max_range_1B2B:
-                coef_idx_row = coef_max_range_1B2B-1
-                breakpoint()
-            if coef_idx_col < 0:
-                coef_idx_col = 0
-                breakpoint()
-            if coef_idx_col >= coef_max_range_1B2B:
-                coef_idx_col = coef_max_range_1B2B-1
-                breakpoint()
-            if CF_user.TEST_SHOW_DBG_EN == 1:
-                print(f"[ERROR] in calculate new gray valu for 2B2A: coef_idx_row, coef_idx_col over max_range:({coef_max_range_1B2B})!")
-                print(f"coef_idx_row={coef_idx_row}")
-                print(f"coef_idx_col={coef_idx_col}")
-                print(f"i={i}")
-                print(f"j={j}")
+    ## ===== 計算(C2_B_x,C2_B_y)周圍的影像梯度等資訊 =====
+    img_2B_sub = np.zeros((Size,Size), dtype=np.float64)
+    for y3 in range(-Len,Len+1,1):
+        for x3 in range(-Len,Len+1,1):
+            x_2B = C2_B_x+x3
+            y_2B = C2_B_y+y3
+            img_2B_sub[y3+Len][x3+Len] = get_subpixel_value_cubic(img_2B, x_2B, y_2B)
 
-            A = cubic_coef_2B[coef_idx_row][coef_idx_col][:]
-            A_re = np.reshape(A, (4,4), order='F')
-            # 計算插值之灰階值，並且儲存至Gvalue_g
-            Gvalue_TEMP[i][j] = get_cubic_value(position_warped[0]-np.floor(position_warped[0]),\
-                                                position_warped[1]-np.floor(position_warped[1]), A_re)
-            
-    # new gray value matrix of C2B (with interpolation): 
-    img_2B_sub = Gvalue_TEMP[1:Size_TEMP-1,1:Size_TEMP-1]
-    # Image gradient of new C2B image
-    IGrad_2B2A_u_temp = cv.Sobel(Gvalue_TEMP, cv.CV_64F, 0, 1)*0.125 # y方向
-    IGrad_2B2A_v_temp = cv.Sobel(Gvalue_TEMP, cv.CV_64F, 1, 0)*0.125 # x方向
-    Sobel_2B_u = IGrad_2B2A_u_temp[1:Size_TEMP-1,1:Size_TEMP-1]
-    Sobel_2B_v = IGrad_2B2A_v_temp[1:Size_TEMP-1,1:Size_TEMP-1]
-    return C2_B_x, C2_B_y, Sobel_2B_u, Sobel_2B_v, img_2B_sub
+    # padding (otherwise sobel will get bad result in boarder)
+    pad = Len + 1  # Sobel need more 1 pixel to expand boarder
+    img_2B_sub_pad = cv.copyMakeBorder(img_2B_sub, pad, pad, pad, pad, borderType=cv.BORDER_REFLECT)
+    sobel_2B_y = cv.Sobel(img_2B_sub_pad, cv.CV_64F, 0, 1)*0.125 # y方向
+    sobel_2B_x = cv.Sobel(img_2B_sub_pad, cv.CV_64F, 1, 0)*0.125 # x方向
+    
+    sobel_2B_x = sobel_2B_x[pad:-pad, pad:-pad]
+    sobel_2B_y = sobel_2B_y[pad:-pad, pad:-pad]
+
+    return C2_B_x, C2_B_y, sobel_2B_x, sobel_2B_y, img_2B_sub
 
 
 
@@ -328,11 +271,11 @@ def find_pt_1B1A(img_1B,
                               (0, 0, 1)], dtype=np.float64)
         
     # Reference subset (Simplied: delta_p = 0) !!!!!!!!
-    Gvalue_ref_sub = img_bef_sub 
+    ref_matrix_f = img_bef_sub 
     # Mean of Reference subset
-    f_average = np.mean(Gvalue_ref_sub)
+    f_average = np.mean(ref_matrix_f)
     # Delta_f
-    delta_f = np.sqrt(np.sum(np.square(Gvalue_ref_sub-f_average)))
+    delta_f = np.sqrt(np.sum(np.square(ref_matrix_f-f_average)))
 
     # define displacement vector: P
     u = Int_u
@@ -354,32 +297,32 @@ def find_pt_1B1A(img_1B,
                     np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
     while limit > 0.0001 and cnt < 30:
         # Average gray value of deformed subset points(with interpolation)
-        Gvalue_g = np.zeros((Size,Size), dtype=np.float64)
+        target_matrix_g = np.zeros((Size,Size), dtype=np.float64)
         
-        #====================== Compute Gvalue_g in C =======================#
+        #====================== Compute target_matrix_g in C =======================#
         # 載入 dll 動態連結檔案:
         m = cdll.LoadLibrary(f'{CF.DLL_DIR}/iteration_1B1A.dll')
         # 設定 dll 檔案中 Bicubic 函數的參數資料型態:
-        m.Gvalue_g.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double)]
+        m.target_matrix_g.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double)]
         # 設定 dll 檔案中 Bicubic 函數的傳回值資料型態
         #m.Bicubic.restype = c_int
         # 取得陣列指標 3個
-        Gvalue_g_Ptr = Gvalue_g.ctypes.data_as(POINTER(c_double))
+        Gvalue_g_Ptr = target_matrix_g.ctypes.data_as(POINTER(c_double))
         Cubic_coef_1B1A_Ptr = Cubic_coef_1B1A.ctypes.data_as(POINTER(c_double))
         warp_aft_coef_Ptr = warp_aft_coef.ctypes.data_as(POINTER(c_double))
-        # 呼叫 dll 檔案中的 Gvalue_g 函數 
-        m.Gvalue_g(Gvalue_g_Ptr, Cubic_coef_1B1A_Ptr, warp_aft_coef_Ptr)
+        # 呼叫 dll 檔案中的 target_matrix_g 函數 
+        m.target_matrix_g(Gvalue_g_Ptr, Cubic_coef_1B1A_Ptr, warp_aft_coef_Ptr)
         #=====================================================================#
         
         # compute g_average
-        g_average = np.mean(Gvalue_g)
+        g_average = np.mean(target_matrix_g)
 
         # compute delata_g
-        delta_g = np.sqrt(np.sum(np.square(Gvalue_g-g_average)))
+        delta_g = np.sqrt(np.sum(np.square(target_matrix_g-g_average)))
         # construct Correlation_sum matrix
         Correlation_sum = np.zeros((6,), dtype=np.float64)
         # dF_dP
-        dF_dP = (Gvalue_ref_sub-f_average) - (delta_f/delta_g)*(Gvalue_g-g_average)
+        dF_dP = (ref_matrix_f-f_average) - (delta_f/delta_g)*(target_matrix_g-g_average)
         
         ## ===== Compute Correlation_sum in C ===== ##
         # 載入 dll 動態連結檔案:
@@ -501,11 +444,11 @@ def find_pt_2B2A(img_2A,
                               (0, 0, 1)], dtype=np.float64)
         
     # Reference subset (Simplied: delta_p = 0) !!!!!!!!
-    Gvalue_ref_sub = img_bef_sub 
+    ref_matrix_f = img_bef_sub 
     # Mean of Reference subset
-    f_average = np.mean(Gvalue_ref_sub)
+    f_average = np.mean(ref_matrix_f)
     # Delta_f
-    delta_f = np.sqrt(np.sum(np.square(Gvalue_ref_sub-f_average)))
+    delta_f = np.sqrt(np.sum(np.square(ref_matrix_f-f_average)))
 
     # define displacement vector: P
     u = Int_u
@@ -527,32 +470,32 @@ def find_pt_2B2A(img_2A,
                     np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
     while limit > 0.0001 and cnt < 30:
         # Average gray value of deformed subset points(with interpolation)
-        Gvalue_g = np.zeros((Size,Size), dtype=np.float64)
+        target_matrix_g = np.zeros((Size,Size), dtype=np.float64)
         
-        #====================== Compute Gvalue_g in C =======================#
+        #====================== Compute target_matrix_g in C =======================#
         # 載入 dll 動態連結檔案:
         m = cdll.LoadLibrary(f'{CF.DLL_DIR}/iteration_2B2A.dll')
         # 設定 dll 檔案中 Bicubic 函數的參數資料型態:
-        m.Gvalue_g.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double)]
+        m.target_matrix_g.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double)]
         # 設定 dll 檔案中 Bicubic 函數的傳回值資料型態
         #m.Bicubic.restype = c_int
         # 取得陣列指標 3個
-        Gvalue_g_Ptr = Gvalue_g.ctypes.data_as(POINTER(c_double))
+        Gvalue_g_Ptr = target_matrix_g.ctypes.data_as(POINTER(c_double))
         Cubic_coef_2B2A_Ptr = Cubic_coef_2B2A.ctypes.data_as(POINTER(c_double))
         warp_aft_coef_Ptr = warp_aft_coef.ctypes.data_as(POINTER(c_double))
-        # 呼叫 dll 檔案中的 Gvalue_g 函數 
-        m.Gvalue_g(Gvalue_g_Ptr, Cubic_coef_2B2A_Ptr, warp_aft_coef_Ptr)
+        # 呼叫 dll 檔案中的 target_matrix_g 函數 
+        m.target_matrix_g(Gvalue_g_Ptr, Cubic_coef_2B2A_Ptr, warp_aft_coef_Ptr)
         #=====================================================================#
         
         # compute g_average
-        g_average = np.mean(Gvalue_g)
+        g_average = np.mean(target_matrix_g)
 
         # compute delata_g
-        delta_g = np.sqrt(np.sum(np.square(Gvalue_g-g_average)))
+        delta_g = np.sqrt(np.sum(np.square(target_matrix_g-g_average)))
         # construct Correlation_sum matrix
         Correlation_sum = np.zeros((6,), dtype=np.float64)
         # dF_dP
-        dF_dP = (Gvalue_ref_sub-f_average) - (delta_f/delta_g)*(Gvalue_g-g_average)
+        dF_dP = (ref_matrix_f-f_average) - (delta_f/delta_g)*(target_matrix_g-g_average)
         
         #==================== Compute Correlation_sum in C ======================#
         # 載入 dll 動態連結檔案:

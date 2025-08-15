@@ -8,7 +8,7 @@ import os
 import time
 import Config as CF
 import Config_user as CF_user
-from function.algorithm.interpolation import get_cubic_coef_1B2B, get_cubic_coef_1B1A, get_cubic_coef_2B2A
+from function.algorithm.interpolation import get_cubic_coef_1B1A, get_cubic_coef_2B2A
 from function.algorithm import hessian
 import function.calibration.image_calibration as img_cal
 import function.algorithm.DIC as DIC
@@ -107,30 +107,30 @@ Q = cv_file.getNode('Q').mat()
 side_len = int(np.sqrt(CF_user.TEST_POINT_ARRAY))
 side_len_half = int((side_len-1)/2)
 
-# start point : (C1_B_x, C1_B_y)
-# C1_B_x = coor_1B.x
-# C1_B_y = coor_1B.y
-# C2_B_x = coor_2B.x
-# C2_B_y = coor_2B.y
+# start point : (C1_B_x_ini, C1_B_y_ini)
+# C1_B_x_ini = coor_1B.x
+# C1_B_y_ini = coor_1B.y
+# C2_B_x_ini = coor_2B.x
+# C2_B_y_ini = coor_2B.y
 
-C1_B_x = 466
-C1_B_y = 274
-C2_B_x = 166
-C2_B_y = 274
+C1_B_x_ini = 466
+C1_B_y_ini = 274
+C2_B_x_ini = 166
+C2_B_y_ini = 274
 
-## check if C1_B_x, y and C2_B_x, y not defined
-for var_name in ['C1_B_x', 'C1_B_y', 'C2_B_x', 'C2_B_y']:
+## check if C1_B_x_ini, y and C2_B_x_ini, y not defined
+for var_name in ['C1_B_x_ini', 'C1_B_y_ini', 'C2_B_x_ini', 'C2_B_y_ini']:
     if var_name not in globals() or globals()[var_name] is None:
         print(f"[ERROR] {var_name} not defined or is None!")
 
-print(f"C1_B_x: {C1_B_x}")
-print(f"C1_B_y: {C1_B_y}")
-print(f"C2_B_x: {C2_B_x}")
-print(f"C2_B_y: {C2_B_y}")
+print(f"C1_B_x_ini: {C1_B_x_ini}")
+print(f"C1_B_y_ini: {C1_B_y_ini}")
+print(f"C2_B_x_ini: {C2_B_x_ini}")
+print(f"C2_B_y_ini: {C2_B_y_ini}")
 print("")
 
 # Due to the large distance (disparity) between the two cameras, a translational distance is set to facilitate DIC in quickly finding corresponding points in the 2B image.
-translate_1B2B = C1_B_x - C2_B_x  # !!!!!!!!!!!!!!! 修改過
+translate_1B2B = C1_B_x_ini - C2_B_x_ini  # !!!!!!!!!!!!!!! 修改過
 print(f"translate_1B2B:{translate_1B2B}")
 if translate_1B2B < 0:
     print(f"translate_1B2B: {translate_1B2B} < 0 !!")
@@ -158,14 +158,8 @@ img_1B_rec_gray = cv.cvtColor(img_1B_rec, cv.COLOR_BGR2GRAY)
 img_2B_rec_gray = cv.cvtColor(img_2B_rec, cv.COLOR_BGR2GRAY)
 # precompute the img_bef image gradient by Sobel operator
 # camera1 bef_image
-Sobel_1B_u = cv.Sobel(img_1B_rec_gray, cv.CV_64F, 0, 1)*0.125 # y方向
-Sobel_1B_v = cv.Sobel(img_1B_rec_gray, cv.CV_64F, 1, 0)*0.125 # x方向
-
-""" ========== Interpolation: Bicubic part1 =========="""
-# 填充額外數值以供插值係數計算: 2B_full
-img_2B_rec_gray_pad = np.pad(img_2B_rec_gray,[(1,2),(1,2)], mode = 'edge')
-row_2B, col_2B = img_2B_rec_gray.shape
-cubic_coef_2B_whole_img, Cubic_Xinv = get_cubic_coef_1B2B(img_2B_rec_gray_pad, row_2B, col_2B)
+sobel_1B_y_whole_img = cv.Sobel(img_1B_rec_gray, cv.CV_64F, 0, 1)*0.125 # y方向
+sobel_1B_x_whole_img = cv.Sobel(img_1B_rec_gray, cv.CV_64F, 1, 0)*0.125 # x方向
 
 # storage area
 C1B_points = np.zeros((side_len,side_len,2), dtype=int)
@@ -184,20 +178,19 @@ disM_in_2 = np.zeros((side_len,side_len), dtype=float)
 stress_in = np.zeros((side_len,side_len), dtype=float)
 stress_out = np.zeros((side_len,side_len), dtype=float)
 
-print(f"C1_B_x: {C1_B_x}")
-print(f"C1_B_y: {C1_B_y}")
-print(f"C2_B_x: {C2_B_x}")
-print(f"C2_B_y: {C2_B_y}")
+print(f"C1_B_x_ini: {C1_B_x_ini}")
+print(f"C1_B_y_ini: {C1_B_y_ini}")
+print(f"C2_B_x_ini: {C2_B_x_ini}")
+print(f"C2_B_y_ini: {C2_B_y_ini}")
 print("")
 
 ## Corrsponding points
 for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
     for L in range(-side_len_half,side_len_half+1,1):
-        print(f"C2_B_y: {C2_B_y}")
-        # print(f"P:{P}")
-        # print(f"L:{L}")
-        C1_B_x = int(CF_user.TEST_INTERVAL*L + C1_B_x)
-        C1_B_y = int(CF_user.TEST_INTERVAL*P + C1_B_y)
+        C1_B_x = int(CF_user.TEST_INTERVAL*L + C1_B_x_ini)
+        C1_B_y = int(CF_user.TEST_INTERVAL*P + C1_B_y_ini)
+        # print(f"C1_B_x:{C1_B_x}")
+        # print(f"C1_B_y:{C1_B_y}")
         C1B_points[P+side_len_half][L+side_len_half][0] = C1_B_y
         C1B_points[P+side_len_half][L+side_len_half][1] = C1_B_x
 
@@ -208,31 +201,21 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
 
         # Image gradient of 1B2B
         Len_1B2B = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B2B-1))
-        IGrad_1B2B_u = Sobel_1B_u[C1_B_y-Len_1B2B:C1_B_y+Len_1B2B+1,\
-                                  C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
-        IGrad_1B2B_v = Sobel_1B_v[C1_B_y-Len_1B2B:C1_B_y+Len_1B2B+1,\
-                                  C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
-        H_inv_1B2B, J_1B2B = hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B2B, IGrad_1B2B_u, IGrad_1B2B_v)
-        
-        # 從全圖插值表找插值(用於1B2B搜尋)
-        coef_max_range_1B2B_half = int((CF_user.TEST_SUBSET_SIZE_1B2B)*2)
+        img_gradient_y = sobel_1B_y_whole_img[C1_B_y-Len_1B2B:C1_B_y+Len_1B2B+1,\
+                                              C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
+        img_gradient_x = sobel_1B_x_whole_img[C1_B_y-Len_1B2B:C1_B_y+Len_1B2B+1,\
+                                              C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
+        H_inv_1B2B, J_1B2B = hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B2B, img_gradient_y, img_gradient_x)
 
-        # 計算img2上以猜測目標點為中心，計算插植係數
-        C2_B_x_guess = int(C1_B_x-translate_1B2B)
-        C2_B_y_guess = int(C1_B_y)
-        # 以所選目標點p1(C1_B_x,C1_B_y)為中心 計算插植係數 求解p2(C2_B_x,C2_B_y)後注意 仍需要以p1為基準
-        cubic_coef_2B = cubic_coef_2B_whole_img[C2_B_y_guess-coef_max_range_1B2B_half:C2_B_y_guess+coef_max_range_1B2B_half+1,\
-                                                C2_B_x_guess-coef_max_range_1B2B_half:C2_B_x_guess+coef_max_range_1B2B_half+1]
-        # 1B2B尋找對應點與2B之影像梯度
-
-
-        C2_B_x, C2_B_y, Sobel_2B_u, Sobel_2B_v, img_2B_sub =\
-        DIC.find_pt_info_1B2B(img_1B_rec_gray, img_2B_rec_gray,\
-                                C1_B_x, C1_B_y,\
-                                CF_user.TEST_SUBSET_SIZE_1B2B,\
-                                CF_user.TEST_SUBSET_SIZE_2B2A,\
-                                CF_user.TEST_SCAN_SIZE_1B2B, H_inv_1B2B,\
-                                J_1B2B, cubic_coef_2B, translate_1B2B, coef_max_range_1B2B_half)
+        C2_B_x, C2_B_y, sobel_2B_x, sobel_2B_y, img_2B_sub =\
+        DIC.find_pt_info_1B2B(img_1B_rec_gray,
+                                img_2B_rec_gray,
+                                C1_B_x, C1_B_y,
+                                CF_user.TEST_SUBSET_SIZE_1B2B,
+                                CF_user.TEST_SUBSET_SIZE_2B2A,
+                                CF_user.TEST_SCAN_SIZE_1B2B,
+                                H_inv_1B2B,
+                                J_1B2B, translate_1B2B)
 
         C2B_points[P+side_len_half][L+side_len_half][0] = C2_B_y
         C2B_points[P+side_len_half][L+side_len_half][1] = C2_B_x
@@ -251,9 +234,9 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         # << 預計算H_inv_2A2B, J_2A2B >>
         # 1B1A
         Len_1B1A = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1))
-        IGrad_1B1A_u = Sobel_1B_u[C1_B_y-Len_1B1A:C1_B_y+Len_1B1A+1,\
+        IGrad_1B1A_u = sobel_1B_y_whole_img[C1_B_y-Len_1B1A:C1_B_y+Len_1B1A+1,\
                                   C1_B_x-Len_1B1A:C1_B_x+Len_1B1A+1]
-        IGrad_1B1A_v = Sobel_1B_v[C1_B_y-Len_1B1A:C1_B_y+Len_1B1A+1,\
+        IGrad_1B1A_v = sobel_1B_x_whole_img[C1_B_y-Len_1B1A:C1_B_y+Len_1B1A+1,\
                                   C1_B_x-Len_1B1A:C1_B_x+Len_1B1A+1]
         H_inv_1B1A, J_1B1A =\
             hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B1A, IGrad_1B1A_u, IGrad_1B1A_v)
@@ -263,8 +246,8 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         
         # 2B2A (注意:影像梯度矩陣尺寸需調整至2B2A尺寸)
         Len_2B2A = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1))
-        IGrad_2B2A_u = Sobel_2B_u
-        IGrad_2B2A_v = Sobel_2B_v
+        IGrad_2B2A_u = sobel_2B_x
+        IGrad_2B2A_v = sobel_2B_y
         H_inv_2B2A, J_2B2A =\
             hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_2B2A, IGrad_2B2A_u, IGrad_2B2A_v) 
         H_inv_2B2A_test = H_inv_2B2A 
@@ -274,11 +257,12 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         # store img_2B_sub
         img_2B_sub_zone[P+side_len_half][L+side_len_half][:][:] = img_2B_sub
         
-        img_1A_rec = cv.circle(img_1B_rec, (int(C1_B_x), int(C1_B_y)), 5,\
+        img_1B_rec = cv.circle(img_1B_rec, (int(C1_B_x), int(C1_B_y)), 5,\
                                 (0, 255, 255), 1)  
-        img_2A_rec = cv.circle(img_2B_rec, (int(C2_B_x), int(C2_B_y)), 5,\
-                                (0, 255, 255), 1)  
-
+        img_2B_rec = cv.circle(img_2B_rec, (int(C2_B_x), int(C2_B_y)), 5,\
+                                (0, 255, 255), 1)
+        # print(f"(C1_B_x, C1_B_y)=({C1_B_x},{C1_B_y})")
+        # print(f"(C2_B_x, C2_B_y)=({C2_B_x},{C2_B_y})")
 
 # 指定陣列中心之追蹤點在2B之位置
 u2 = C2B_points[side_len_half][side_len_half][0]
@@ -289,6 +273,7 @@ cv.imshow('img_2B_rec', img_2B_rec)
 cv.waitKey(0)
 cv.destroyAllWindows()
 
+exit()
 breakpoint()
 # ==================================================================
 

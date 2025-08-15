@@ -1,38 +1,32 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar  9 18:30:41 2022
 
-@author: wuaki
-"""
-
-def get_Hinv_jacobian(Size, IGrad_u, IGrad_v):
+def get_Hinv_jacobian(size, img_grad_x, img_grad_y):
     import numpy as np
-    # Half of Size length
-    Len = int(0.5*(Size-1))
+    # Half of size length
+    Len = int(0.5*(size-1))
     # Hessian matrix
-    H = np.zeros((6,6), dtype=int)
+    H = np.zeros((6,6), dtype=np.float64)
     # Jacobiab of reference subset warp_function (dW_dP)
     dW_dP = np.array([(1, -Len, -Len, 0, 0, 0),\
-                      (0, 0, 0, 1, -Len, -Len)], dtype=int)
+                      (0, 0, 0, 1, -Len, -Len)], dtype=np.float64)
     # Image gradient (F: computed using Sobel operator)
-    dF = np.zeros((1, 2), dtype=int)
+    dF = np.zeros((1, 2), dtype=np.float64)
     # Storage zone of Jacobiab of reference subset (F*dW_dP)
-    J = np.zeros((Size,Size,6), dtype=float) 
+    J = np.zeros((size,size,6), dtype=np.float64) 
     # Compute jacobian of reference subset point(F*dW_dP), and then compute hessian matrix.
-    for i in range(0,Size,1):
-        for j in range(0,Size,1):
-            dF[0][0] = IGrad_u[i][j] # x
-            dF[0][1] = IGrad_v[i][j] # y
-            dW_dP[0][1] = i-Len   #np.array([(1, -Len+j, -Len+i, 0, 0, 0), (0, 0, 0, 1, -Len+j, -Len+i)], dtype=int)
-            dW_dP[0][2] = j-Len
-            dW_dP[1][4] = i-Len
-            dW_dP[1][5] = j-Len
+    for y in range(0,size,1):
+        for x in range(0,size,1):
+            dF[0][0] = img_grad_x[y][x] # x
+            dF[0][1] = img_grad_y[y][x] # y
+            dW_dP[0][1] = x-Len
+            dW_dP[0][2] = y-Len
+            dW_dP[1][4] = x-Len
+            dW_dP[1][5] = y-Len
             # Jacobian matrix: J
-            J_TEMP = dF.dot(dW_dP)
-            J[i][j][:] = J_TEMP
-            H = np.transpose(J_TEMP).dot(J_TEMP) + H
+            J_temp = dF @ dW_dP
+            J[y][x][:] = J_temp
+            H += J_temp.T @ J_temp
     # inverse of matrix H
-    H_inv = np.linalg.inv(H)
+    H_inv = np.linalg.inv(H + 1e-8 * np.eye(6))
     
     return H_inv, J
     
