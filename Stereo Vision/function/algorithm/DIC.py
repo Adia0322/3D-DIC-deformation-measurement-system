@@ -1,5 +1,5 @@
 ## ===== DIC (digital image correlation) ===== ##
-from function.algorithm.interpolation import get_subpixel_value_cubic
+from function.algorithm.interpolation import get_subpixel_value_cv
 import numpy as np
 from ctypes import cdll, c_int, c_double, POINTER
 import cv2 as cv
@@ -29,7 +29,7 @@ def find_pt_info_1B2B(img_1B,
     # 係數index、CoefValue
     CoefValue = np.zeros((2,), dtype=np.float64)
     # 所選取目標點的位置 
-    Object_point = np.array((C1_B_y, C1_B_x - translate_1B2B), dtype=np.int32)
+    Object_point = np.array((C2_B_y_guess, C2_B_x_guess), dtype=np.int32)
 
     # 建構變形前後影像之子矩陣: img_bef_sub
     img_bef_sub = img_bef[C1_B_y-Len:C1_B_y+Len+1,\
@@ -53,7 +53,7 @@ def find_pt_info_1B2B(img_1B,
                        POINTER(c_double)]
 
     # 設定 dll 檔案中 SCAN 函數的傳回值資料型態
-    m.SCAN.restype = c_int
+    m.SCAN.restype = None
 
     # 取得陣列指標 7個
     img_aft_Ptr = img_aft.ctypes.data_as(POINTER(c_int))
@@ -72,7 +72,7 @@ def find_pt_info_1B2B(img_1B,
     # Integer displacement for subpixels algorithm
     int_dis_y = Displacement[0] # y
     int_dis_x = Displacement[1] # x
-
+    
     """============================ Precomputation ==========================="""
     # define Incremental displacement vector: delta_P
     x_inc = 0.01
@@ -113,7 +113,7 @@ def find_pt_info_1B2B(img_1B,
     limit = np.sqrt(np.square(delta_P[0]) + np.square(delta_P[1]*Len)+\
                     np.square(delta_P[2]*Len) + np.square(delta_P[3])+\
                     np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
-    while limit > 0.0001 and cnt < 30:
+    while limit > 0.0001 and cnt < 50:
         # Average gray value of deformed subset points(with interpolation)
         target_matrix_g = np.zeros((Size,Size), dtype=np.float64)
         for y1 in range(0,Size,1):
@@ -122,8 +122,14 @@ def find_pt_info_1B2B(img_1B,
                 position_warp = warp_aft_coef.dot(position)
                 local_x = position_warp[0]
                 local_y = position_warp[1]
-                target_matrix_g[y1][x1] = get_subpixel_value_cubic(img_2B, C2_B_x_guess + local_x, C2_B_y_guess + local_y)
+                tmp_x = C2_B_x_guess + local_x
+                tmp_y = C2_B_y_guess + local_y
+                # print(f"tmp_x: {tmp_x}")
+                # print(f"tmp_y: {tmp_y}")
+                target_matrix_g[y1][x1] = get_subpixel_value_cv(img_2B, tmp_x, tmp_y)
+                # print(f"target_matrix_g[y1][x1]: {target_matrix_g[y1][x1]}")
         
+        # print(f"limit: {limit}")
         # compute g_average
         g_average = np.mean(target_matrix_g)
 
@@ -154,12 +160,15 @@ def find_pt_info_1B2B(img_1B,
         warp_aft_coef = warp_aft_coef @ warp_inc_coef_inv
         # count
         cnt += 1
-    print(f"limit_final={limit}")
+    
+
     # Subpixel displacement
     X = warp_aft_coef[0][2] # 水平
     Y = warp_aft_coef[1][2] # 垂直
     C2_B_y = Y + C2_B_y_guess
     C2_B_x = X + C2_B_x_guess
+    # C2_B_y = int_dis_y + C2_B_y_guess
+    # C2_B_x = int_dis_x + C2_B_x_guess
     
     ## ===== 計算(C2_B_x,C2_B_y)周圍的影像梯度等資訊 =====
     img_2B_sub = np.zeros((Size,Size), dtype=np.float64)
@@ -167,7 +176,7 @@ def find_pt_info_1B2B(img_1B,
         for x3 in range(-Len,Len+1,1):
             x_2B = C2_B_x+x3
             y_2B = C2_B_y+y3
-            img_2B_sub[y3+Len][x3+Len] = get_subpixel_value_cubic(img_2B, x_2B, y_2B)
+            img_2B_sub[y3+Len][x3+Len] = get_subpixel_value_cv(img_2B, x_2B, y_2B)
 
     # padding (otherwise sobel will get bad result in boarder)
     pad = Len + 1  # Sobel need more 1 pixel to expand boarder

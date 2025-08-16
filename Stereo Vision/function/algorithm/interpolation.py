@@ -19,6 +19,23 @@ def get_subpixel_value_cubic(img, x, y):
     return val[0]
 
 
+def get_subpixel_value_cv(img, x, y, method='cubic'):
+    import cv2
+    import numpy as np
+    img_float32 = img.astype(np.float32)
+
+    if method == 'cubic':
+        flags = cv2.INTER_CUBIC
+    elif method == 'linear':
+        flags = cv2.INTER_LINEAR
+    else:
+        raise ValueError("method 必須是 'cubic' 或 'linear'")
+
+    # getRectSubPix 可以取單點 subpixel
+    patch = cv2.getRectSubPix(img_float32, (1, 1), (float(x), float(y)))
+    return float(patch[0, 0])
+
+
 def get_cubic_coef_1B1A(cubic_Xinv, Length, img):
     import numpy as np
     from ctypes import cdll, c_int, c_double, POINTER

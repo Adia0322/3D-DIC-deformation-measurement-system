@@ -108,15 +108,15 @@ side_len = int(np.sqrt(CF_user.TEST_POINT_ARRAY))
 side_len_half = int((side_len-1)/2)
 
 # start point : (C1_B_x_ini, C1_B_y_ini)
-# C1_B_x_ini = coor_1B.x
-# C1_B_y_ini = coor_1B.y
-# C2_B_x_ini = coor_2B.x
-# C2_B_y_ini = coor_2B.y
+C1_B_x_ini = coor_1B.x
+C1_B_y_ini = coor_1B.y
+C2_B_x_ini = coor_2B.x
+C2_B_y_ini = coor_2B.y
 
-C1_B_x_ini = 466
-C1_B_y_ini = 274
-C2_B_x_ini = 166
-C2_B_y_ini = 274
+C1_B_x_ini = 468
+C1_B_y_ini = 273
+C2_B_x_ini = 164
+C2_B_y_ini = 259
 
 ## check if C1_B_x_ini, y and C2_B_x_ini, y not defined
 for var_name in ['C1_B_x_ini', 'C1_B_y_ini', 'C2_B_x_ini', 'C2_B_y_ini']:
@@ -184,6 +184,9 @@ print(f"C2_B_x_ini: {C2_B_x_ini}")
 print(f"C2_B_y_ini: {C2_B_y_ini}")
 print("")
 
+
+# cv.imwrite("img_1B_rec_gray.jpg", img_1B_rec_gray)
+# cv.imwrite("img_2B_rec_gray.jpg", img_2B_rec_gray)
 ## Corrsponding points
 for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
     for L in range(-side_len_half,side_len_half+1,1):

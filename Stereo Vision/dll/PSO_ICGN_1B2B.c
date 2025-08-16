@@ -7,7 +7,7 @@
 #include <time.h>
 
 #define square(x) ((x)*(x))
-#define mean(x) ((x)/(Size*Size))
+#define mean(x) ((x)/(double)(Size*Size))
 
 #define img_row 480 
 #define img_column 640 
@@ -48,7 +48,7 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 {
 	int i, j, k, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0;
 	int max_index = 0; 
-	double Pbest[Population][Dimension], Gbest[Dimension];   /* Gbest[0] = x, Gbest[1]  = y */
+	double Pbest[Population][Dimension], Gbest[Dimension];   /* Gbest[0] = y, Gbest[1]  = x */
 	double upper_bounds[2]={Boundary_Length, Boundary_Length}, lower_bounds[2]={-Boundary_Length, -Boundary_Length}; 
 	double Pi[Population][Dimension], Vi[Population][Dimension];
 	double Cost_initial, Cost, max_value_Gbest=-1e+9, max_value_Pbest[Population];
