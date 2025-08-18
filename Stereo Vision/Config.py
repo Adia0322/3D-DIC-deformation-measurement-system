@@ -3,12 +3,8 @@ import os
 import Config_user as CF_user
 cwd = os.getcwd()
 WORKSPACE = os.path.join(cwd, "Stereo Vision")
-SO_FILE_DIR = os.path.join(WORKSPACE, "so_file")
-SO_FILE_INTERPLATION_DIR = os.path.join(WORKSPACE, "so_file", "interpolation")
-SO_FILE_ALGORITHM_DIR = os.path.join(WORKSPACE, "so_file", "algorithm")
-SO_FILE_DIC_DIR = os.path.join(WORKSPACE, "so_file", "algorithm", "DIC")
-DLL_DIC_DIR = os.path.join(WORKSPACE, "dll", "DIC")
 DLL_DIR = os.path.join(WORKSPACE, "dll")
+FUNC_DIR = os.path.join(WORKSPACE, "function")
 FUNC_ALGO_DIR = os.path.join(WORKSPACE, "function", "algorithm")
 IMAGE_DIR = os.path.join(WORKSPACE, "image")
 IMAGE_CAL_DIR = os.path.join(WORKSPACE, "image", "CAL")

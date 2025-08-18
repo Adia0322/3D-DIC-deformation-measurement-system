@@ -10,30 +10,34 @@ import Config as CF
 #     return patch[0, 0]
 
 ## cubic
+
+
+
+# ## 雙線性
+# def get_subpixel_value_cv(img, x, y):
+#     import cv2 as cv
+#     # getRectSubPix 取單個像素 (1x1 patch)
+#     patch = cv.getRectSubPix(img, (1, 1), (x, y))  # (x, y) 為中心座標
+#     return patch[0, 0]
+
+## cubic
 def get_subpixel_value_cubic(img, x, y):
     # map_coordinates 需要 (row, col) 座標順序
     import numpy as np
     from scipy.ndimage import map_coordinates
-    coords = np.array([[y], [x]])
+    img = img.astype(np.float64)
+    coords = np.array([[y], [x]], dtype=np.float64)
     val = map_coordinates(img, coords, order=3, mode='reflect')
     return val[0]
 
 
-def get_subpixel_value_cv(img, x, y, method='cubic'):
-    import cv2
+
+def get_subpixel_cv(img, x_coords, y_coords):
     import numpy as np
-    img_float32 = img.astype(np.float32)
+    import cv2 as cv
+    val = cv.getRectSubPix(img.astype(np.float32), patchSize=(1,1), center=(x_coords, y_coords))
+    return val[0,0]
 
-    if method == 'cubic':
-        flags = cv2.INTER_CUBIC
-    elif method == 'linear':
-        flags = cv2.INTER_LINEAR
-    else:
-        raise ValueError("method 必須是 'cubic' 或 'linear'")
-
-    # getRectSubPix 可以取單點 subpixel
-    patch = cv2.getRectSubPix(img_float32, (1, 1), (float(x), float(y)))
-    return float(patch[0, 0])
 
 
 def get_cubic_coef_1B1A(cubic_Xinv, Length, img):
