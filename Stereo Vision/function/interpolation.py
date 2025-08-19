@@ -126,28 +126,71 @@ def get_cubic_value_spline(block4x4, x, y):
     value = CubicSpline(range(4), temp)(y)
     return value
 
-# def get_cubic_coef_1B2B(img, row, col):
-#     Cubic_X = np.array([(1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1),\
-#                   (1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0),\
-#                   (1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1),\
-#                   (1, 2, 4, 8, -1, -2, -4, -8, 1, 2, 4, 8, -1, -2, -4, -8),\
-#                   (1, -1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
-#                   (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
-#                   (1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
-#                   (1, 2, 4, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
-#                   (1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1),\
-#                   (1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0),\
-#                   (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),\
-#                   (1, 2, 4, 8, 1, 2, 4, 8, 1, 2, 4, 8, 1, 2, 4, 8),\
-#                   (1, -1, 1, -1, 2, -2, 2, -2, 4, -4, 4, -4, 8, -8, 8, -8),\
-#                   (1, 0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 8, 0, 0, 0),\
-#                   (1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8),\
-#                   (1, 2, 4, 8, 2, 4, 8, 16, 4, 8, 16, 32, 8, 16, 32, 64)], dtype=int)
-#     cubic_Xinv = np.linalg.inv(Cubic_X)
-#     coef = np.zeros((row,col,16), dtype=float)
-#     for i in range(0,row,1):
-#         for j in range(0,col,1):
-#             gray_value = img[i:i+4, j:j+4]
-#             gray_value = np.reshape(gray_value, (16,1), order='F')
-#             coef[i, j, ...] = np.transpose(cubic_Xinv.dot(gray_value))
-#     return coef, cubic_Xinv
+
+
+def cubic_kernel(t, a=-0.5):
+    """ Keys' bicubic kernel (a=-0.5 is Catmull-Rom spline) """
+    t = abs(t)
+    if t <= 1:
+        return (a + 2) * (t**3) - (a + 3) * (t**2) + 1
+    elif t < 2:
+        return a * (t**3) - 5*a * (t**2) + 8*a*t - 4*a
+    else:
+        return 0.0
+
+def get_cubic_coef(img, x, y, a=-0.5):
+    import numpy as np
+    """
+    給定影像與浮點座標 (x, y)，回傳 4x4 的 bicubic 插值係數，
+    同時計算對應像素值。
+    
+    img: 2D numpy array (灰階影像)
+    x, y: float 座標
+    a: cubic kernel 參數 (預設 -0.5)
+    """
+    x0 = int(np.floor(x))
+    y0 = int(np.floor(y))
+
+    # 計算水平方向權重
+    wx = np.array([cubic_kernel(x - (x0 + i), a) for i in range(-1, 3)])
+    wy = np.array([cubic_kernel(y - (y0 + j), a) for j in range(-1, 3)])
+
+    # 係數矩陣 (外積)
+    coef = np.outer(wy, wx)
+
+    # 收集 16 個鄰近像素值
+    values = np.zeros((4, 4))
+    h, w = img.shape
+    for j in range(-1, 3):
+        for i in range(-1, 3):
+            xx = np.clip(x0 + i, 0, w - 1)
+            yy = np.clip(y0 + j, 0, h - 1)
+            values[j + 1, i + 1] = img[yy, xx]
+
+    # 插值結果
+    interpolated_value = np.sum(coef * values)
+
+    return interpolated_value
+
+def get_cubic_X_inv():
+    import numpy as np
+    # Constant coefficient
+    Cubic_X = np.array([(1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1),\
+                      (1, 0, 0, 0, -1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 0),\
+                      (1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, -1, -1),\
+                      (1, 2, 4, 8, -1, -2, -4, -8, 1, 2, 4, 8, -1, -2, -4, -8),\
+                      (1, -1, 1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
+                      (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
+                      (1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
+                      (1, 2, 4, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),\
+                      (1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1),\
+                      (1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0),\
+                      (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),\
+                      (1, 2, 4, 8, 1, 2, 4, 8, 1, 2, 4, 8, 1, 2, 4, 8),\
+                      (1, -1, 1, -1, 2, -2, 2, -2, 4, -4, 4, -4, 8, -8, 8, -8),\
+                      (1, 0, 0, 0, 2, 0, 0, 0, 4, 0, 0, 0, 8, 0, 0, 0),\
+                      (1, 1, 1, 1, 2, 2, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8),\
+                      (1, 2, 4, 8, 2, 4, 8, 16, 4, 8, 16, 32, 8, 16, 32, 64)], dtype=int)
+    Cubic_Xinv = np.linalg.inv(Cubic_X)
+
+    return Cubic_Xinv

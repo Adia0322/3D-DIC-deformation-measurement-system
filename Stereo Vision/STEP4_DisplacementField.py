@@ -8,6 +8,7 @@ import os
 import time
 import Config as CF
 import Config_user as CF_user
+import function
 from function.interpolation import get_cubic_coef_1B1A, get_cubic_coef_2B2A
 import function.hessian as hessian
 import function.calibration.image_calibration as img_cal
@@ -270,15 +271,17 @@ cv.imshow('img_2B_rec', img_2B_rec)
 cv.waitKey(0)
 cv.destroyAllWindows()
 
-exit()
-breakpoint()
-# ==================================================================
+# exit()
+# breakpoint()
+# ===================================== =============================
 
 """  決定擬合平面與追蹤點第4個點  """
 # #平面法向量
 # nVector = Points2Plane.normalVector(WC_bef_zone, side_len)
 # #正規化
 # nVector = nVector/np.linalg.norm(nVector)
+
+cubic_X_inv = function.interpolation.get_cubic_X_inv()
 
 dis_sum = 0
 img_idx = 1
@@ -326,11 +329,6 @@ for img_idx in range(1,2,1):
     # Convert to gray image
     img_1A_rec_gray = cv.cvtColor(img_1A_rec, cv.COLOR_BGR2GRAY)
     img_2A_rec_gray = cv.cvtColor(img_2A_rec, cv.COLOR_BGR2GRAY)
-    # 計算1A影像插值係數
-    # length_half
-    # length_half = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1)+20)
-    # length_half_1B1A = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
-    # length_half_2B2A = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1)+0.5*(CF_user.TEST_SCAN_SIZE_2B2A-1))
     
     start2 = time.time()
     
@@ -345,16 +343,16 @@ for img_idx in range(1,2,1):
             # Time start
             start = time.time()
             
-            # length_half = length_half_1B1A = length_half_2B2A
-            length_half = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
+            # len_half = length_half_1B1A = length_half_2B2A
+            len_half = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
             
             # Time start _1B1A
             start_1B1A = time.time()
             
-            # 插值係數1B1A
-            Gvalue_1B1A = img_1A_rec_gray[int(C1_B_y)-length_half-1:int(C1_B_y)+length_half+3,\
-                                          int(C1_B_x)-length_half-1:int(C1_B_x)+length_half+3] 
-            Cubic_coef_1B1A = get_cubic_coef_1B1A(Cubic_Xinv, length_half, Gvalue_1B1A)
+            # select interpolation area and get cubic coef: 1B1A
+            interp_area_1B1A = img_1A_rec_gray[int(C1_B_y)-len_half-1:int(C1_B_y)+len_half+3,\
+                                               int(C1_B_x)-len_half-1:int(C1_B_x)+len_half+3] 
+            Cubic_coef_1B1A = get_cubic_coef_1B1A(cubic_X_inv, len_half, interp_area_1B1A)
             # H, J
             H_inv_1B1A[:][:] = H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_1B1A[:][:][:] = J1B1A_all[P+side_len_half][L+side_len_half][:][:][:]
@@ -376,10 +374,10 @@ for img_idx in range(1,2,1):
             # 提取1B2B計算之img_2B灰階值矩陣
             img_2B_sub = img_2B_sub_zone[P+side_len_half][L+side_len_half]
 
-            # 插值係數2B2A      
-            Gvalue_2B2A = img_2A_rec_gray[int(C2_B_y)-length_half-1:int(C2_B_y)+length_half+3,\
-                                          int(C2_B_x)-length_half-1:int(C2_B_x)+length_half+3] 
-            Cubic_coef_2B2A = get_cubic_coef_2B2A(Cubic_Xinv, length_half, Gvalue_2B2A)           
+            # select interpolation area and get cubic coef: 2B2A      
+            interp_area_2B2A = img_2A_rec_gray[int(C2_B_y)-len_half-1:int(C2_B_y)+len_half+3,\
+                                               int(C2_B_x)-len_half-1:int(C2_B_x)+len_half+3] 
+            Cubic_coef_2B2A = get_cubic_coef_2B2A(cubic_X_inv, len_half, interp_area_2B2A)           
             # H, J
             H_inv_2B2A[:][:] = H2B2A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_2B2A[:][:][:] = J2B2A_all[P+side_len_half][L+side_len_half][:][:][:]         

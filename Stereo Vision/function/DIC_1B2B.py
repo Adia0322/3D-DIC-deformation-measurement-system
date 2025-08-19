@@ -40,9 +40,8 @@ def find_pt_info_1B2B(img_1B,
        # Target subset (deformed subset)
        img_aft_sub = np.zeros((Size, Size), dtype=np.int32)
 
-       """ =============== Compute integer displacement ==============="""
-       #============================ 使用C計算位移 ============================#
-       # 載入 dll 動態連結檔案: test_2D_DIC_displacement.dll
+       """ ========== Compute integer displacement =========="""
+       # 載入 dll 動態連結檔案:
        m = cdll.LoadLibrary(f'{CF.DLL_DIR}/PSO_ICGN_1B2B.dll')
 
        # 設定 dll 檔案中 SCAN 函數的參數資料型態:
@@ -53,7 +52,7 @@ def find_pt_info_1B2B(img_1B,
        # 設定 dll 檔案中 SCAN 函數的傳回值資料型態
        m.SCAN.restype = None
 
-       # 取得陣列指標 7個
+       # get 7 pointers
        img_aft_Ptr = img_aft.ctypes.data_as(POINTER(c_int))
        img_aft_sub_Ptr = img_aft_sub.ctypes.data_as(POINTER(c_int))
        img_bef_sub_Ptr = img_bef_sub.ctypes.data_as(POINTER(c_int))
@@ -64,15 +63,14 @@ def find_pt_info_1B2B(img_1B,
 
        # 呼叫 dll 檔案中的 SCAN 函數 
        m.SCAN(img_aft_Ptr, img_aft_sub_Ptr, img_bef_sub_Ptr,\
-       Mean_bef_Ptr, Object_point_Ptr, Displacement_Ptr, CoefValue_Ptr)
+              Mean_bef_Ptr, Object_point_Ptr, Displacement_Ptr, CoefValue_Ptr)
 
-       #=================== 位移計算完成 計算結果在Displacement =========================#
        # Integer displacement for subpixels algorithm
        int_dis_y = Displacement[0] # y
        int_dis_x = Displacement[1] # x
        print(f"(int_dis_x,int_dis_y)=({int_dis_x},{int_dis_y})")
 
-       # Reference subset (Simplied: delta_p = 0) !!!!!!!!
+       # Reference subset
        ref_matrix_f = img_bef_sub
        # Mean of Reference subset 
        f_average = np.mean(ref_matrix_f)
@@ -88,13 +86,13 @@ def find_pt_info_1B2B(img_1B,
        yy = 0
        # warp function coefficient of deformed subset
        warp_aft_coef = np.array([(1+xx, xy, x),\
-                            (yx, 1+yy, y),\
-                            (0, 0, 1)], dtype=np.float64)
+                                 (yx, 1+yy, y),\
+                                 (0, 0, 1)], dtype=np.float64)
 
        """========================== Iteration ============================="""
        cnt = 0
        limit = 0.1
-       while limit > 0.0001 and cnt < 30:
+       while limit > 0.001 and cnt < 20:
        # Average gray value of deformed subset points(with interpolation)
               target_matrix_g = np.zeros((Size,Size), dtype=np.float64)
               for y1 in range(0,Size,1):
