@@ -18,6 +18,7 @@ void Gvalue_g(double Gvalue_g[][Size], double Cubic_coef[2*Length+1][2*Length+1]
  double Warp[3][3])
 {
 	int i, j, u, v, a1, a2;
+	int x1, y1;
 	double k, m, x, y;
 	double A_re[4][4];
 	
@@ -36,7 +37,7 @@ void Gvalue_g(double Gvalue_g[][Size], double Cubic_coef[2*Length+1][2*Length+1]
 			else
 			{
 				a1 = Length + (int)(k);
-				x = k - (int)(k);
+				x = k - (int)(k); // 小數
 			}
 			if (m<0)
 			{
@@ -68,12 +69,12 @@ void Gvalue_g(double Gvalue_g[][Size], double Cubic_coef[2*Length+1][2*Length+1]
 			
 			/* Construct Bicubic coefficient matrix */ 
 			int count=0;
-			for (u=0;u<4;u++)
+			for (x1=0;x1<4;x1++)
 			{
-				for (v=0;v<4;v++)
+				for (y1=0;y1<4;y1++)
 				{
 					/* column�u����R */ 
-					A_re[v][u] = Cubic_coef[a1][a2][count];
+					A_re[y1][x1] = Cubic_coef[a1][a2][count];
 					count += 1;
 				}
 			}

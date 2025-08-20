@@ -7,12 +7,12 @@ import Config as CF
 ### ===== 1B1A =====
 def find_pt_1B1A(img_1B,
                  img_1A,
-                C1_B_x,
-                C1_B_y,
-                TEST_SUBSET_SIZE_1B1A,
-                H_inv_1B1A,
-                J_1B1A,
-                Cubic_coef_1B1A):
+                 C1_B_x,
+                 C1_B_y,
+                 TEST_SUBSET_SIZE_1B1A,
+                 H_inv_1B1A,
+                 J_1B1A,
+                 Cubic_coef_1B1A):
     ## Initial setting ##
     # 設定子矩陣大小(邊長) 需要是奇數!!
     Size = TEST_SUBSET_SIZE_1B1A
@@ -101,7 +101,7 @@ def find_pt_1B1A(img_1B,
         # set input data type
         m.Gvalue_g.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double)]
         # return data type
-        m.Bicubic.restype = None
+        m.Gvalue_g.restype = None
         # get 3 pointers
         Gvalue_g_Ptr = target_matrix_g.ctypes.data_as(POINTER(c_double))
         Cubic_coef_1B1A_Ptr = Cubic_coef_1B1A.ctypes.data_as(POINTER(c_double))
@@ -127,7 +127,7 @@ def find_pt_1B1A(img_1B,
         # 設定 dll 檔案中 correlation_sum 函數的參數資料型態:
         m.CorrSum.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double)]
         # 設定 dll 檔案中 correlation_sum 函數的傳回值資料型態
-        m.SCAN.restype = None
+        m.CorrSum.restype = None
         # 取得陣列指標 3個
         Correlation_sum_Ptr = correlation_sum.ctypes.data_as(POINTER(c_double))
         dF_dP_Ptr = residual_F_G.ctypes.data_as(POINTER(c_double))
@@ -156,6 +156,6 @@ def find_pt_1B1A(img_1B,
      
     X = warp_aft_coef[0][2]
     Y = warp_aft_coef[1][2]
-    C1_A_y = X + C1_B_y
-    C1_A_x = Y + C1_B_x
+    C1_A_y = y + C1_B_y
+    C1_A_x = x + C1_B_x
     return C1_A_x, C1_A_y, CoefValue

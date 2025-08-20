@@ -359,10 +359,14 @@ for img_idx in range(1,2,1):
     
             # 搜尋對應點
             C1_A_x, C1_A_y, Coef_1B1A =\
-                DIC_1B1A.find_pt_1B1A(img_1B_rec_gray, img_1A_rec_gray,\
-                                    C1_B_x, C1_B_y,\
-                                    CF_user.TEST_SUBSET_SIZE_1B1A,\
-                                    H_inv_1B1A, J_1B1A, Cubic_coef_1B1A)
+                DIC_1B1A.find_pt_1B1A(img_1B_rec_gray,
+                                      img_1A_rec_gray,
+                                      C1_B_x,
+                                      C1_B_y,
+                                      CF_user.TEST_SUBSET_SIZE_1B1A,
+                                      H_inv_1B1A,
+                                      J_1B1A,
+                                      Cubic_coef_1B1A)
             # Time end!
             end_1B1A = time.time()
             time_1B1A = end_1B1A - start_1B1A
@@ -383,12 +387,14 @@ for img_idx in range(1,2,1):
             J_2B2A[:][:][:] = J2B2A_all[P+side_len_half][L+side_len_half][:][:][:]         
             # 搜尋對應點
             C2_A_x, C2_A_y, Coef_2B2A =\
-                DIC_2B2A.find_pt_2B2A(img_2A_rec_gray,\
-                                    C2_B_x, C2_B_y,\
-                                    CF_user.TEST_SUBSET_SIZE_2B2A,\
-                                    H_inv_2B2A, J_2B2A,\
-                                    Cubic_coef_2B2A,\
-                                    img_2B_sub)
+                DIC_2B2A.find_pt_2B2A(img_2A_rec_gray,
+                                      C2_B_x,
+                                      C2_B_y,
+                                      CF_user.TEST_SUBSET_SIZE_2B2A,
+                                      H_inv_2B2A,
+                                      J_2B2A,
+                                      Cubic_coef_2B2A,
+                                      img_2B_sub)
             # Time end!
             end_2B2A = time.time()
             time_2B2A = end_2B2A - start_2B2A

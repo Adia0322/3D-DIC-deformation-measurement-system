@@ -66,7 +66,7 @@ def find_pt_2B2A(img_2A,
     # Mean of Reference subset
     f_average = np.mean(ref_matrix_f)
     # Delta_f
-    delta_f = np.sqrt(np.sum(np.square(ref_matrix_f-f_average)))
+    delta_f = np.std(ref_matrix_f, ddof=0)
 
     # define displacement vector: P
     x = int_dis_x # obtain by PSO
@@ -94,7 +94,7 @@ def find_pt_2B2A(img_2A,
         # set input data type
         m.Gvalue_g.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double)]
         # return data type
-        m.Bicubic.restype = None
+        m.Gvalue_g.restype = None
         # get 3 pointers
         Gvalue_g_Ptr = target_matrix_g.ctypes.data_as(POINTER(c_double))
         Cubic_coef_2B2A_Ptr = Cubic_coef_2B2A.ctypes.data_as(POINTER(c_double))
@@ -120,7 +120,7 @@ def find_pt_2B2A(img_2A,
         # 設定 dll 檔案中 correlation_sum 函數的參數資料型態:
         m.CorrSum.argtypes = [POINTER(c_double), POINTER(c_double), POINTER(c_double)]
         # 設定 dll 檔案中 correlation_sum 函數的傳回值資料型態
-        m.SCAN.restype = None
+        m.CorrSum.restype = None
         # 取得陣列指標 3個
         Correlation_sum_Ptr = correlation_sum.ctypes.data_as(POINTER(c_double))
         dF_dP_Ptr = residual_F_G.ctypes.data_as(POINTER(c_double))
@@ -149,6 +149,6 @@ def find_pt_2B2A(img_2A,
         
     X = warp_aft_coef[0][2]
     Y = warp_aft_coef[1][2]
-    C2_A_y = Y + np.floor(C2_B_y)
-    C2_A_x = X + np.floor(C2_B_x)
+    C2_A_y = y + np.floor(C2_B_y)
+    C2_A_x = x + np.floor(C2_B_x)
     return C2_A_x, C2_A_y, CoefValue
