@@ -3,19 +3,16 @@ print("\n<< Stereo_DIC_PSO_ICGN >>")
 
 import numpy as np
 import cv2 as cv
-import sys
 import os
 import time
 import Config as CF
 import Config_user as CF_user
-import function
-from function.interpolation import get_cubic_coef_1B1A, get_cubic_coef_2B2A
-import function.hessian as hessian
+import function.interpolation
+import function.hessian
+import function.DIC_1B2B
+import function.DIC_1B1A
+import function.DIC_2B2A
 import function.calibration.image_calibration as img_cal
-import function.DIC_1B2B as DIC_1B2B
-import function.DIC_1B1A as DIC_1B1A
-import function.DIC_2B2A as DIC_2B2A
-from function.processing.image_processing import rotate_image
 from function.tool.click_tool import click_recorder
 
 print(f"pwd: {os.getcwd()}")
@@ -54,8 +51,8 @@ img_1B = cv.imread(str(img_1B_path))
 img_2B = cv.imread(str(img_2B_path))
 
 if CF_user.TEST_ROTATE_IMG_EN == 1:
-    img_1B = rotate_image(img_1B, -90)
-    img_2B = rotate_image(img_2B, 90)
+    img_1B = function.image_processing.rotate_image(img_1B, -90)
+    img_2B = function.image_processing.rotate_image(img_2B, 90)
 
 ## image rectification
 if CF_user.TEST_REC_IMG_EN == 1:
@@ -160,7 +157,7 @@ if CF_user.TEST_GAUSSIANBLUR_EN == 1:
 img_1B_rec_gray = cv.cvtColor(img_1B_rec, cv.COLOR_BGR2GRAY)
 img_2B_rec_gray = cv.cvtColor(img_2B_rec, cv.COLOR_BGR2GRAY)
 # precompute the img_bef image gradient by Sobel operator
-# camera1 bef_image
+# camera1 bef_image (0.125 for normalizing)
 sobel_1B_y_whole_img = cv.Sobel(img_1B_rec_gray, cv.CV_64F, 0, 1)*0.125 # y方向
 sobel_1B_x_whole_img = cv.Sobel(img_1B_rec_gray, cv.CV_64F, 1, 0)*0.125 # x方向
 
@@ -208,10 +205,10 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
                                               C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
         img_gradient_x = sobel_1B_x_whole_img[C1_B_y-Len_1B2B:C1_B_y+Len_1B2B+1,\
                                               C1_B_x-Len_1B2B:C1_B_x+Len_1B2B+1]
-        H_inv_1B2B, J_1B2B = hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B2B, img_gradient_x, img_gradient_y)
+        H_inv_1B2B, J_1B2B = function.hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B2B, img_gradient_x, img_gradient_y)
 
         C2_B_x, C2_B_y, sobel_2B_x, sobel_2B_y, img_2B_sub =\
-        DIC_1B2B.find_pt_info_1B2B(img_1B_rec_gray,
+        function.DIC_1B2B.find_pt_info_1B2B(img_1B_rec_gray,
                                 img_2B_rec_gray,
                                 C1_B_x, C1_B_y,
                                 CF_user.TEST_SUBSET_SIZE_1B2B,
@@ -240,7 +237,7 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         img_grad_1B1A_y = sobel_1B_y_whole_img[C1_B_y-Len_1B1A:C1_B_y+Len_1B1A+1,\
                                                C1_B_x-Len_1B1A:C1_B_x+Len_1B1A+1]
         H_inv_1B1A, J_1B1A =\
-            hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B1A, img_grad_1B1A_x, img_grad_1B1A_y)
+            function.hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B1A, img_grad_1B1A_x, img_grad_1B1A_y)
         # store H and J
         H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:] = H_inv_1B1A[:][:]
         J1B1A_all[P+side_len_half][L+side_len_half][:][:][:] = J_1B1A[:][:][:]
@@ -250,7 +247,7 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         img_grad_2B2A_x = sobel_2B_x
         img_grad_2B2A_y = sobel_2B_y
         H_inv_2B2A, J_2B2A =\
-            hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_2B2A, img_grad_2B2A_x, img_grad_2B2A_y) 
+            function.hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_2B2A, img_grad_2B2A_x, img_grad_2B2A_y) 
         # store H and J
         H2B2A_inv_all[P+side_len_half][L+side_len_half][:][:] = H_inv_2B2A[:][:]
         J2B2A_all[P+side_len_half][L+side_len_half][:][:][:] = J_2B2A[:][:][:]
@@ -271,8 +268,8 @@ cv.imshow('img_2B_rec', img_2B_rec)
 cv.waitKey(0)
 cv.destroyAllWindows()
 
-# exit()
-# breakpoint()
+exit()
+breakpoint()
 # ===================================== =============================
 
 """  決定擬合平面與追蹤點第4個點  """
@@ -310,8 +307,8 @@ for img_idx in range(1,2,1):
     
     # rotate image
     if CF_user.TEST_ROTATE_IMG_EN == 1:
-        img_1A = rotate_image(img_1A, -90)
-        img_2A = rotate_image(img_2A, 90)
+        img_1A = function.image_processing.rotate_image(img_1A, -90)
+        img_2A = function.image_processing.rotate_image(img_2A, 90)
     
     # image rectification
     if CF_user.TEST_REC_IMG_EN == 1:
@@ -349,24 +346,19 @@ for img_idx in range(1,2,1):
             # Time start _1B1A
             start_1B1A = time.time()
             
-            # select interpolation area and get cubic coef: 1B1A
-            interp_area_1B1A = img_1A_rec_gray[int(C1_B_y)-len_half-1:int(C1_B_y)+len_half+3,\
-                                               int(C1_B_x)-len_half-1:int(C1_B_x)+len_half+3] 
-            Cubic_coef_1B1A = get_cubic_coef_1B1A(cubic_X_inv, len_half, interp_area_1B1A)
             # H, J
             H_inv_1B1A[:][:] = H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_1B1A[:][:][:] = J1B1A_all[P+side_len_half][L+side_len_half][:][:][:]
     
             # 搜尋對應點
             C1_A_x, C1_A_y, Coef_1B1A =\
-                DIC_1B1A.find_pt_1B1A(img_1B_rec_gray,
+                function.DIC_1B1A.find_pt_1B1A(img_1B_rec_gray,
                                       img_1A_rec_gray,
                                       C1_B_x,
                                       C1_B_y,
                                       CF_user.TEST_SUBSET_SIZE_1B1A,
                                       H_inv_1B1A,
-                                      J_1B1A,
-                                      Cubic_coef_1B1A)
+                                      J_1B1A)
             # Time end!
             end_1B1A = time.time()
             time_1B1A = end_1B1A - start_1B1A
@@ -377,23 +369,18 @@ for img_idx in range(1,2,1):
             
             # 提取1B2B計算之img_2B灰階值矩陣
             img_2B_sub = img_2B_sub_zone[P+side_len_half][L+side_len_half]
-
-            # select interpolation area and get cubic coef: 2B2A      
-            interp_area_2B2A = img_2A_rec_gray[int(C2_B_y)-len_half-1:int(C2_B_y)+len_half+3,\
-                                               int(C2_B_x)-len_half-1:int(C2_B_x)+len_half+3] 
-            Cubic_coef_2B2A = get_cubic_coef_2B2A(cubic_X_inv, len_half, interp_area_2B2A)           
+       
             # H, J
             H_inv_2B2A[:][:] = H2B2A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_2B2A[:][:][:] = J2B2A_all[P+side_len_half][L+side_len_half][:][:][:]         
             # 搜尋對應點
             C2_A_x, C2_A_y, Coef_2B2A =\
-                DIC_2B2A.find_pt_2B2A(img_2A_rec_gray,
+                function.DIC_2B2A.find_pt_2B2A(img_2A_rec_gray,
                                       C2_B_x,
                                       C2_B_y,
                                       CF_user.TEST_SUBSET_SIZE_2B2A,
                                       H_inv_2B2A,
                                       J_2B2A,
-                                      Cubic_coef_2B2A,
                                       img_2B_sub)
             # Time end!
             end_2B2A = time.time()

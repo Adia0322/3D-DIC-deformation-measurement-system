@@ -10,8 +10,8 @@ Stereo Vision
 import cv2 as cv
 import Config as CF
 import Config_user as CF_user
-from function.processing.image_processing import rotate_image
-from function.processing.image_processing import click_event
+from function.image_processing import rotate_image
+from function.image_processing import click_event
 ### ===== 參數設定 ===== ###
 # camera index
 cam_index_left = 1

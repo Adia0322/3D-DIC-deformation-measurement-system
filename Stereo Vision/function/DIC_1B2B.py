@@ -1,5 +1,5 @@
 ## ===== DIC (digital image correlation) ===== ##
-from function.interpolation import get_subpixel_cv
+import function
 import numpy as np
 from ctypes import cdll, c_int, c_double, POINTER
 import cv2 as cv
@@ -22,6 +22,7 @@ def find_pt_info_1B2B(img_1B,
        img_bef = np.array(img_1B, dtype=np.int32)
        img_aft = np.array(img_2B, dtype=np.int32)
 
+       height, width = img_aft.shape
        # 建立位移暫存區
        Displacement = np.zeros((2,), dtype=np.int32) # 依序為 [y, x]
        # 係數index、CoefValue
@@ -40,19 +41,15 @@ def find_pt_info_1B2B(img_1B,
        # Target subset (deformed subset)
        img_aft_sub = np.zeros((Size, Size), dtype=np.int32)
 
-       """ ========== Compute integer displacement =========="""
-       # 載入 dll 動態連結檔案:
+       ## ========== ##
+       # load dll
        m = cdll.LoadLibrary(f'{CF.DLL_DIR}/PSO_ICGN_1B2B.dll')
-
-       # 設定 dll 檔案中 SCAN 函數的參數資料型態:
        m.SCAN.argtypes = [POINTER(c_int), POINTER(c_int), POINTER(c_int),\
                           POINTER(c_double), POINTER(c_int), POINTER(c_int),\
                           POINTER(c_double)]
-
-       # 設定 dll 檔案中 SCAN 函數的傳回值資料型態
+       # return type
        m.SCAN.restype = None
-
-       # get 7 pointers
+       # pointers
        img_aft_Ptr = img_aft.ctypes.data_as(POINTER(c_int))
        img_aft_sub_Ptr = img_aft_sub.ctypes.data_as(POINTER(c_int))
        img_bef_sub_Ptr = img_bef_sub.ctypes.data_as(POINTER(c_int))
@@ -60,16 +57,16 @@ def find_pt_info_1B2B(img_1B,
        Object_point_Ptr = Object_point.ctypes.data_as(POINTER(c_int))
        Displacement_Ptr = Displacement.ctypes.data_as(POINTER(c_int))
        CoefValue_Ptr = CoefValue.ctypes.data_as(POINTER(c_double))                        
-
-       # 呼叫 dll 檔案中的 SCAN 函數 
+       # call SCAN
        m.SCAN(img_aft_Ptr, img_aft_sub_Ptr, img_bef_sub_Ptr,\
               Mean_bef_Ptr, Object_point_Ptr, Displacement_Ptr, CoefValue_Ptr)
-
+       
        # Integer displacement for subpixels algorithm
        int_dis_y = Displacement[0] # y
        int_dis_x = Displacement[1] # x
        print(f"(int_dis_x,int_dis_y)=({int_dis_x},{int_dis_y})")
 
+       ## ========== ##
        # Reference subset
        ref_matrix_f = img_bef_sub
        # Mean of Reference subset 
@@ -101,17 +98,15 @@ def find_pt_info_1B2B(img_1B,
                             position_warp = warp_aft_coef.dot(position)
                             local_x = position_warp[0]
                             local_y = position_warp[1]
-                            tmp_x = C2_B_x_guess + local_x
-                            tmp_y = C2_B_y_guess + local_y
-                            # print(f"tmp_x: {tmp_x}")
-                            # print(f"tmp_y: {tmp_y}")
-                            target_matrix_g[y1][x1] = get_subpixel_cv(img_aft, tmp_x, tmp_y)
+                            img_x = C2_B_x_guess + local_x
+                            img_y = C2_B_y_guess + local_y
+                            target_matrix_g[y1][x1] =\
+                                     function.interpolation.bicubic(img_aft, width, height, img_x, img_y)
                             # print(f"target_matrix_g[y1][x1]: {target_matrix_g[y1][x1]}")
 
               # print(f"limit: {limit}")
               # compute g_average
               g_average = np.mean(target_matrix_g)
-
               # compute delata_g (standard deviation)
               delta_g = np.std(target_matrix_g, ddof=0)
 
@@ -137,12 +132,10 @@ def find_pt_info_1B2B(img_1B,
               warp_inc_coef_inv = np.linalg.inv(warp_inc_coef)
               # update warp function
               warp_aft_coef = warp_aft_coef @ warp_inc_coef_inv
-              # count
               cnt += 1
               # print(f"limit={limit}")
 
        
-       # Subpixel displacement
        X = warp_aft_coef[0][2] # 水平
        Y = warp_aft_coef[1][2] # 垂直
        print(f"(X,int_dis_y)=({X},{Y})")
@@ -153,11 +146,12 @@ def find_pt_info_1B2B(img_1B,
        img_2B_sub = np.zeros((Size,Size), dtype=np.float64)
        for y3 in range(-Len,Len+1,1):
               for x3 in range(-Len,Len+1,1):
-                     x_2B = C2_B_x+x3
-                     y_2B = C2_B_y+y3
-                     img_2B_sub[y3+Len][x3+Len] = get_subpixel_cv(img_2B, x_2B, y_2B)
+                     x_2B = C2_B_x + x3
+                     y_2B = C2_B_y + y3
+                     img_2B_sub[y3+Len][x3+Len] =\
+                              function.interpolation.bicubic(img_2B, width, height, x_2B, y_2B)
 
-       # padding (otherwise sobel will get bad result in boarder)
+       # padding
        pad = Len + 1  # Sobel need more 1 pixel to expand boarder
        img_2B_sub_pad = cv.copyMakeBorder(img_2B_sub, pad, pad, pad, pad, borderType=cv.BORDER_REFLECT)
        sobel_2B_y = cv.Sobel(img_2B_sub_pad, cv.CV_64F, 0, 1)*0.125 # y方向
