@@ -4,6 +4,8 @@ import numpy as np
 from ctypes import cdll, c_int, c_double, POINTER
 import cv2 as cv
 import Config as CF
+import time
+
 def find_pt_info_1B2B(img_1B,
                       img_2B,
                       C1_B_x, C1_B_y,
@@ -11,7 +13,7 @@ def find_pt_info_1B2B(img_1B,
                       H_inv_1B2B,
                       J_1B2B,
                       trans):
-
+       
        ## Initial setting ##
        Size = TEST_SUBSET_SIZE_1B2B
        # 子集合之半邊長
@@ -43,7 +45,7 @@ def find_pt_info_1B2B(img_1B,
 
        ## ========== ##
        # load dll
-       m = cdll.LoadLibrary(f'{CF.DLL_DIR}/PSO_ICGN_1B2B.dll')
+       m = cdll.LoadLibrary(f'{CF.DLL_DIR}/PSO_1B2B.dll')
        m.SCAN.argtypes = [POINTER(c_int), POINTER(c_int), POINTER(c_int),\
                           POINTER(c_double), POINTER(c_int), POINTER(c_int),\
                           POINTER(c_double)]
@@ -66,6 +68,7 @@ def find_pt_info_1B2B(img_1B,
        int_dis_x = Displacement[1] # x
        print(f"(int_dis_x,int_dis_y)=({int_dis_x},{int_dis_y})")
 
+       
        ## ========== ##
        # Reference subset
        ref_matrix_f = img_bef_sub
@@ -89,21 +92,37 @@ def find_pt_info_1B2B(img_1B,
        """========================== Iteration ============================="""
        cnt = 0
        limit = 0.1
+       point_ini = np.array((C2_B_x_guess,C2_B_y_guess), dtype=np.float64)
+       img_2B = img_2B.astype(np.float64)
+       img_2B_flat = img_2B.flatten(order='C') # C:n row major
        while limit > 0.001 and cnt < 20:
-       # Average gray value of deformed subset points(with interpolation)
-              target_matrix_g = np.zeros((Size,Size), dtype=np.float64)
-              for y1 in range(0,Size,1):
-                     for x1 in range(0,Size,1):
-                            position = np.transpose(np.array([x1-Len, y1-Len, 1], dtype=np.float64))
-                            position_warp = warp_aft_coef.dot(position)
-                            local_x = position_warp[0]
-                            local_y = position_warp[1]
-                            img_x = C2_B_x_guess + local_x
-                            img_y = C2_B_y_guess + local_y
-                            target_matrix_g[y1][x1] =\
-                                     function.interpolation.bicubic(img_aft, width, height, img_x, img_y)
-                            # print(f"target_matrix_g[y1][x1]: {target_matrix_g[y1][x1]}")
+              target_matrix_g_flat = np.zeros(Size*Size, dtype=np.float64) # 創建一維陣列
+              # ========== 
+              m = cdll.LoadLibrary(f'{CF.DLL_DIR}/ICGN.dll')
+              
+              m.update_target_img_subset.argtypes = [
+              POINTER(c_double), POINTER(c_double), POINTER(c_double), POINTER(c_double),
+              c_int, c_int, c_int
+              ]
 
+              m.update_target_img_subset.restype = None
+
+              img_2B_flat_ptr = img_2B_flat.ctypes.data_as(POINTER(c_double))
+              target_matrix_g_flat_ptr = target_matrix_g_flat.ctypes.data_as(POINTER(c_double))
+              point_ini_ptr = point_ini.ctypes.data_as(POINTER(c_double))
+              warp_aft_coef_ptr = warp_aft_coef.ctypes.data_as(POINTER(c_double))
+              # call dll
+              m.update_target_img_subset(img_2B_flat_ptr,
+                                         target_matrix_g_flat_ptr,
+                                         point_ini_ptr,
+                                         warp_aft_coef_ptr,
+                                         width,
+                                         height,
+                                         Size)
+
+              target_matrix_g = target_matrix_g_flat.reshape((Size, Size)) 
+              # ========== 
+              
               # print(f"limit: {limit}")
               # compute g_average
               g_average = np.mean(target_matrix_g)
@@ -114,9 +133,7 @@ def find_pt_info_1B2B(img_1B,
               eps = 1e-12
               ratio = delta_f / (delta_g + eps) # prevent zero
               residual_F_G = (ref_matrix_f - f_average) - ratio*(target_matrix_g - g_average)
-              for y2 in range(0,Size,1):
-                     for x2 in range(0,Size,1):
-                            corelation_sum += np.transpose(J_1B2B[y2][x2][:])*residual_F_G[y2][x2]
+              corelation_sum = np.tensordot(J_1B2B, residual_F_G, axes=([0,1],[0,1]))
 
               corelation_sum = corelation_sum.reshape(6,1) 
               delta_P = (-H_inv_1B2B @ corelation_sum).flatten() # flatten turn 2d array to 1d array to get scalar
@@ -134,7 +151,7 @@ def find_pt_info_1B2B(img_1B,
               warp_aft_coef = warp_aft_coef @ warp_inc_coef_inv
               cnt += 1
               # print(f"limit={limit}")
-
+              
        
        X = warp_aft_coef[0][2] # 水平
        Y = warp_aft_coef[1][2] # 垂直

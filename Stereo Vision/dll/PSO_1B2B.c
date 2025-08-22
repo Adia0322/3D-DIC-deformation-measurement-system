@@ -1,4 +1,4 @@
-/*  PSO_ICGN_1B1A 2022.03.06 23:22 */ 
+/*  PSO_1B2B 2022.03.06 23:22 */ 
 /* scan must be odd number, ex:101 */ 
 /* Coefficient criterion: ZNCC */ 
 #include <stdio.h>
@@ -7,20 +7,20 @@
 #include <time.h>
 
 #define square(x) ((x)*(x))
-#define mean(x) ((x)/(Size*Size))
+#define mean(x) ((x)/(double)(Size*Size))
 
 #define img_row 480 
 #define img_column 640 
 
-#define Size 31
+#define Size 31 
 #define SizeHalf (Size-1)/2 
 #define scan 31
-
-#define Population 20 
+// PSO 
+#define Population 100
 #define Dimension 2
-#define Iteration 4
+#define Iteration 20
 #define Iter_reciprocal (1.0/Iteration)
-#define ArraySize_Pini 3
+#define ArraySize_Pini 5
 #define FixedPointRange scan/2
 #define ArrayInterval (FixedPointRange)/(ArraySize_Pini-1) 
 #define Array_Start ArrayInterval*(ArraySize_Pini-1)/2
@@ -28,7 +28,7 @@
 #define Vmax 0.5*Boundary_Length
 #define Vini 0.2*Vmax
 #define W_upper 0.9 
-#define W_lower 0.4
+#define W_lower 0.4 
 #define Decrease_factor 1 
 #define Increase_factor 1.05
 #define Cognition_factor 1.0 
@@ -39,15 +39,16 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
                      int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[]);
 double GRandom(void);
 void init_random_seed();
+void print_array(int array[][Size]);
 
-/* construct C matrix (Main)  */
+/* search (Main)  */
 __declspec(dllexport)
 void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
           double Mean_bef[], int Object_point[], int Displacement[], double CoefValue[])
 {
-	int i, j, k, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0; /*  */ 
+	int i, j, k, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0;
 	int max_index = 0; 
-	double Pbest[Population][Dimension], Gbest[Dimension];   /* Gbest[0] = x, Gbest[1]  = y */
+	double Pbest[Population][Dimension], Gbest[Dimension];   /* Gbest[0] = y, Gbest[1]  = x */
 	double upper_bounds[2]={Boundary_Length, Boundary_Length}, lower_bounds[2]={-Boundary_Length, -Boundary_Length}; 
 	double Pi[Population][Dimension], Vi[Population][Dimension];
 	double Cost_initial, Cost, max_value_Gbest=-1e+9, max_value_Pbest[Population];
@@ -58,6 +59,7 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 	
 	for (i=0;i<Population;i++)
 	{
+		//(ArraySize_Pini)*(ArraySize_Pini)
 		if (i<(ArraySize_Pini*ArraySize_Pini))
 		{
 			Vi[i][0] = Vini*(GRandom()*2-1);
@@ -76,8 +78,8 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 			/* Calculate SSD (sum of squared differences) */
 			Pi_u_ini = (int)Pi[i][0];
 			Pi_v_ini = (int)Pi[i][1];
-			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point,\
-			                             img_aft, img_aft_sub, img_bef_sub, Mean_bef);
+			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point, img_aft,\
+			                             img_aft_sub, img_bef_sub, Mean_bef);
 			
 			/* Individual best value */
 			max_value_Pbest[i] = Cost_initial;
@@ -91,7 +93,6 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 				Gbest[0] = Pi[max_index][0];
 				Gbest[1] = Pi[max_index][1];
 			}
-			
 			Count_u += 1;
 		}
 		
@@ -99,7 +100,7 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 		{
 			for (j=0;j<Dimension;j++)
 			{
-				Vi[i][j] = Vini*(GRandom()*2-1); /* Vini*(-1.0 ~ 1.0) */
+				Vi[i][j] = Vini*(GRandom()*2-1);
 				Pi[i][j] = lower_bounds[j] + 0.5*Boundary_Length +\
 				           0.5*GRandom()*(upper_bounds[j]-lower_bounds[j]);
 				
@@ -108,8 +109,8 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 			/* Calculate SSD (sum of squared differences) */
 			Pi_u_ini = (int)Pi[i][0];
 			Pi_v_ini = (int)Pi[i][1];
-			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point,\
-			                             img_aft, img_aft_sub, img_bef_sub, Mean_bef);
+			Cost_initial = Cost_function(Pi_u_ini, Pi_v_ini, Object_point, img_aft,\
+			                             img_aft_sub, img_bef_sub, Mean_bef);
 			
 			/* Individual best value */
 			max_value_Pbest[i] = Cost_initial;
@@ -117,8 +118,8 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 			/* Global best value */
 			if (Cost_initial>max_value_Gbest)
 			{
-				max_value_Gbest = Cost_initial;
-				max_index = i;
+				max_value_Gbest = Cost_initial; //max_value_Gbest
+				max_index = i; /*  (u,v) = (Pi[max_index,0] , Pi[max_index,1]) */
 				
 				Gbest[0] = Pi[max_index][0];
 				Gbest[1] = Pi[max_index][1];
@@ -127,7 +128,6 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 	}
 	
 	/* Start iteration */ 
-	
 	for (k=0;k<Iteration;k++)
 	{
 		for (i=0;i<Population;i++)
@@ -158,8 +158,7 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 					Pi[i][j] = lower_bounds[j];
 				}
 			}
-			
-			/* Calculate SSD (sum of squared differences) */
+			/* Calculate ZNCC (sum of squared differences) */
 			Pi_u = (int)Pi[i][0]; /* array only accept integer as Argument */
 			Pi_v = (int)Pi[i][1];
 			Cost = Cost_function(Pi_u, Pi_v, Object_point, img_aft,\
@@ -186,7 +185,6 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 			/*sensor[i][0] = (int)Pi[i][0];*/
 			/*sensor[i][1] = (int)Pi[i][1];*/
 		}
-		
 	}
 	/*sensor_coef[0] = Cost_function(0, 0, Object_point, img_aft, img_aft_sub, img_bef_sub);*/
 	/* Output Result */
@@ -200,6 +198,7 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][
 
 
 /*============================ Functions ==============================*/
+/*ZNCC(zero-normalized cross-correlation)(-1 ~ +1) */
 double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_column],\
                      int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[])   
 {
@@ -233,6 +232,7 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 		}
 	}
 	Mean_aft=mean(Aft_sub_sum); /* mean function is defined by macro (#define)   */ 
+	
 	/* Substract its mean, comopute its sqrt and sum */
 	for (i=0;i<Size;i++)
 	{
@@ -250,7 +250,7 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 	return coef;
 }
 
-// /* Generate random number */
+/* Generate random number */
 // double GRandom(void)
 // {
 // 	double i = fmod(rand(),1000.0)/1000.0;
@@ -263,6 +263,7 @@ double GRandom(void)
     return rand() / (double)RAND_MAX;
 }
 
+
 void init_random_seed() {
     static int seeded = 0;
     if (!seeded) {
@@ -270,4 +271,16 @@ void init_random_seed() {
         srand((unsigned) t);
         seeded = 1;
     }
+}
+
+void print_array(int array[][Size]){
+	for (int i = 0; i < Size; i++)
+	{	
+		for (int j = 0; j < Size; j++)
+		{
+			printf("%d ",array[i][j]);
+		}
+		printf("\n");
+	}
+	return;
 }

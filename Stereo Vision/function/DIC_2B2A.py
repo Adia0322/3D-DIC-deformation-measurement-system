@@ -33,7 +33,7 @@ def find_pt_2B2A(img_2A,
 
     """ ===== Compute integer displacement ====="""
     # 載入 dll 動態連結檔案:
-    m = cdll.LoadLibrary(f'{CF.DLL_DIR}/PSO_ICGN_2B2A.dll')
+    m = cdll.LoadLibrary(f'{CF.DLL_DIR}/PSO_2B2A.dll')
 
     # 設定 dll 檔案中 SCAN 函數的參數資料型態:
     m.SCAN.argtypes = [POINTER(c_int), POINTER(c_int), POINTER(c_double),\

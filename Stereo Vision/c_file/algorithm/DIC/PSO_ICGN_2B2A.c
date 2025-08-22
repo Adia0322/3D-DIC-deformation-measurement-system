@@ -1,4 +1,4 @@
-/*  PSO_ICGN_2B2A 2022.03.06 23:22 */ 
+/*  PSO_2B2A 2022.03.06 23:22 */ 
 /* scan must be odd number, ex:101 */ 
 /* Coefficient criterion: ZNCC */ 
 #include <stdio.h>

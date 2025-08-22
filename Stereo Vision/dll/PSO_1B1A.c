@@ -1,4 +1,4 @@
-/*  PSO_ICGN_2B2A 2022.03.06 23:22 */ 
+/*  PSO_1B1A 2022.03.06 23:22 */ 
 /* scan must be odd number, ex:101 */ 
 /* Coefficient criterion: ZNCC */ 
 #include <stdio.h>
@@ -11,11 +11,11 @@
 
 #define img_row 480 
 #define img_column 640 
-/* DIC */ 
-#define Size 31 
+
+#define Size 31
 #define SizeHalf (Size-1)/2 
 #define scan 31
-/* PSO  */ 
+
 #define Population 20 
 #define Dimension 2
 #define Iteration 4
@@ -36,13 +36,13 @@
 
 /* functions */
 double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_column],\
-                     int img_aft_sub[][Size], double img_bef_sub[][Size], double Mean_bef[]);
+                     int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[]);
 double GRandom(void);
 void init_random_seed();
 
 /* construct C matrix (Main)  */
 __declspec(dllexport)
-void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], double img_bef_sub[][Size],\
+void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], int img_bef_sub[][Size],\
           double Mean_bef[], int Object_point[], int Displacement[], double CoefValue[])
 {
 	int i, j, k, Pi_u_ini, Pi_v_ini, Pi_u, Pi_v, Count_u=0, Count_v=0; /*  */ 
@@ -117,8 +117,8 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], double img_bef_sub
 			/* Global best value */
 			if (Cost_initial>max_value_Gbest)
 			{
-				max_value_Gbest = Cost_initial;  /* max_value_Gbest */
-				max_index = i; /* (u,v) = (Pi[max_index,0] , Pi[max_index,1]) */
+				max_value_Gbest = Cost_initial;
+				max_index = i;
 				
 				Gbest[0] = Pi[max_index][0];
 				Gbest[1] = Pi[max_index][1];
@@ -188,11 +188,6 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], double img_bef_sub
 		}
 		
 	}
-	
-	/*Cost = Cost_function(0, 0, Object_point, img_aft,\
-			            img_aft_sub, img_bef_sub, Mean_bef);*/ 
-	/*CoefValue[2] = Cost; */ 
-	
 	/*sensor_coef[0] = Cost_function(0, 0, Object_point, img_aft, img_aft_sub, img_bef_sub);*/
 	/* Output Result */
 	Gbest_u = Gbest[0];
@@ -206,7 +201,7 @@ void SCAN(int img_aft[][img_column], int img_aft_sub[][Size], double img_bef_sub
 
 /*============================ Functions ==============================*/
 double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_column],\
-                     int img_aft_sub[][Size], double img_bef_sub[][Size], double Mean_bef[])   
+                     int img_aft_sub[][Size], int img_bef_sub[][Size], double Mean_bef[])   
 {
 	int i, j, Aft_sub_sum=0;
 	int row, col;
@@ -261,6 +256,7 @@ double Cost_function(int Pi_u, int Pi_v, int Object_point[], int img_aft[][img_c
 // 	double i = fmod(rand(),1000.0)/1000.0;
 // 	return i;
 // }
+
 
 double GRandom(void)
 {

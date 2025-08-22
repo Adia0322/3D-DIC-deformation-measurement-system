@@ -209,11 +209,13 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
 
         C2_B_x, C2_B_y, sobel_2B_x, sobel_2B_y, img_2B_sub =\
         function.DIC_1B2B.find_pt_info_1B2B(img_1B_rec_gray,
-                                img_2B_rec_gray,
-                                C1_B_x, C1_B_y,
-                                CF_user.TEST_SUBSET_SIZE_1B2B,
-                                H_inv_1B2B,
-                                J_1B2B, translate_1B2B)
+                                            img_2B_rec_gray,
+                                            C1_B_x,
+                                            C1_B_y,
+                                            CF_user.TEST_SUBSET_SIZE_1B2B,
+                                            H_inv_1B2B,
+                                            J_1B2B,
+                                            translate_1B2B)
 
         C2B_points[P+side_len_half][L+side_len_half][0] = C2_B_y
         C2B_points[P+side_len_half][L+side_len_half][1] = C2_B_x
