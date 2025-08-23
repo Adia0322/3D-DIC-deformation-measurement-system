@@ -12,9 +12,9 @@ def bicubic(img, width, height, pt_x, pt_y):
     m.get_bicubic_interp_value.restype = c_double
 
     # array pointer
-    img_Ptr = img_double.ctypes.data_as(POINTER(c_double))
+    img_ptr = img_double.ctypes.data_as(POINTER(c_double))
 
     # call dll
-    result = m.get_bicubic_interp_value(img_Ptr, width, height, pt_x, pt_y)
+    result = m.get_bicubic_interp_value(img_ptr, width, height, pt_x, pt_y)
 
     return result

@@ -16,7 +16,7 @@ def find_pt_info_1B2B(img_1B,
        
        ## Initial setting ##
        Size = TEST_SUBSET_SIZE_1B2B
-       # 子集合之半邊長
+       # half of subset
        Len = int(0.5*(Size-1)) 
        # half size of coef_max_range_1B2B (get the center of warp function)
        C2_B_x_guess = C1_B_x - trans
@@ -25,26 +25,23 @@ def find_pt_info_1B2B(img_1B,
        img_aft = np.array(img_2B, dtype=np.int32)
 
        height, width = img_aft.shape
-       # 建立位移暫存區
+       # displacement array
        Displacement = np.zeros((2,), dtype=np.int32) # 依序為 [y, x]
-       # 係數index、CoefValue
+       # index & CoefValue of correlation coeffition
        CoefValue = np.zeros((2,), dtype=np.float64)
-       # 所選取目標點的位置 
+       # initial point
        Object_point = np.array((C2_B_y_guess, C2_B_x_guess), dtype=np.int32)
 
-       # 建構變形前後影像之子矩陣: img_bef_sub
-       img_bef_sub = img_bef[C1_B_y-Len:C1_B_y+Len+1,\
-                             C1_B_x-Len:C1_B_x+Len+1]  
-
        # Reference subset (undeformed subset)
+       img_bef_sub = img_bef[C1_B_y-Len:C1_B_y+Len+1,\
+                             C1_B_x-Len:C1_B_x+Len+1]
        Mean_bef = np.array(np.mean(img_bef_sub), dtype=np.float64)
-       img_bef_sub = img_bef_sub.astype(np.int32)# 將float轉int
+       img_bef_sub = img_bef_sub.astype(np.int32)
 
        # Target subset (deformed subset)
        img_aft_sub = np.zeros((Size, Size), dtype=np.int32)
 
-       ## ========== ##
-       # load dll
+       ## ===== measure interger displacment ===== ##
        m = cdll.LoadLibrary(f'{CF.DLL_DIR}/PSO_1B2B.dll')
        m.SCAN.argtypes = [POINTER(c_int), POINTER(c_int), POINTER(c_int),\
                           POINTER(c_double), POINTER(c_int), POINTER(c_int),\
@@ -59,29 +56,33 @@ def find_pt_info_1B2B(img_1B,
        Object_point_Ptr = Object_point.ctypes.data_as(POINTER(c_int))
        Displacement_Ptr = Displacement.ctypes.data_as(POINTER(c_int))
        CoefValue_Ptr = CoefValue.ctypes.data_as(POINTER(c_double))                        
-       # call SCAN
-       m.SCAN(img_aft_Ptr, img_aft_sub_Ptr, img_bef_sub_Ptr,\
-              Mean_bef_Ptr, Object_point_Ptr, Displacement_Ptr, CoefValue_Ptr)
+       # call SCAN function
+       m.SCAN(img_aft_Ptr,
+              img_aft_sub_Ptr,
+              img_bef_sub_Ptr,
+              Mean_bef_Ptr,
+              Object_point_Ptr,
+              Displacement_Ptr,
+              CoefValue_Ptr)
        
-       # Integer displacement for subpixels algorithm
+       # result
        int_dis_y = Displacement[0] # y
        int_dis_x = Displacement[1] # x
-       print(f"(int_dis_x,int_dis_y)=({int_dis_x},{int_dis_y})")
+       # print(f"(int_dis_x,int_dis_y)=({int_dis_x},{int_dis_y})")
 
-       
        ## ========== ##
        # Reference subset
        ref_matrix_f = img_bef_sub
-       # Mean of Reference subset 
+       # Mean of Reference subset
        f_average = np.mean(ref_matrix_f)
        # Delta_f
        delta_f = np.std(ref_matrix_f, ddof=0)
 
        # define displacement vector: P
-       x = int_dis_x # obtain by PSO
+       x = int_dis_x # obtain from PSO
        xx = 0
        xy = 0
-       y = int_dis_y # obtain by PSO
+       y = int_dis_y # obtain from PSO
        yx = 0
        yy = 0
        # warp function coefficient of deformed subset
@@ -89,14 +90,14 @@ def find_pt_info_1B2B(img_1B,
                                  (yx, 1+yy, y),\
                                  (0, 0, 1)], dtype=np.float64)
 
-       """========================== Iteration ============================="""
+       """========== ICGN =========="""
        cnt = 0
        limit = 0.1
        point_ini = np.array((C2_B_x_guess,C2_B_y_guess), dtype=np.float64)
        img_2B = img_2B.astype(np.float64)
        img_2B_flat = img_2B.flatten(order='C') # C:n row major
        while limit > 0.001 and cnt < 20:
-              target_matrix_g_flat = np.zeros(Size*Size, dtype=np.float64) # 創建一維陣列
+              target_matrix_g_flat = np.zeros(Size*Size, dtype=np.float64) # create new 1d array
               # ========== 
               m = cdll.LoadLibrary(f'{CF.DLL_DIR}/ICGN.dll')
               
@@ -122,7 +123,6 @@ def find_pt_info_1B2B(img_1B,
 
               target_matrix_g = target_matrix_g_flat.reshape((Size, Size)) 
               # ========== 
-              
               # print(f"limit: {limit}")
               # compute g_average
               g_average = np.mean(target_matrix_g)
@@ -152,29 +152,9 @@ def find_pt_info_1B2B(img_1B,
               cnt += 1
               # print(f"limit={limit}")
               
-       
        X = warp_aft_coef[0][2] # 水平
        Y = warp_aft_coef[1][2] # 垂直
-       print(f"(X,int_dis_y)=({X},{Y})")
+       print(f"(X,Y)=({X},{Y})")
        C2_B_y = Y + C2_B_y_guess
        C2_B_x = X + C2_B_x_guess
-
-       ## ===== 計算(C2_B_x,C2_B_y)周圍的影像梯度等資訊 =====
-       img_2B_sub = np.zeros((Size,Size), dtype=np.float64)
-       for y3 in range(-Len,Len+1,1):
-              for x3 in range(-Len,Len+1,1):
-                     x_2B = C2_B_x + x3
-                     y_2B = C2_B_y + y3
-                     img_2B_sub[y3+Len][x3+Len] =\
-                              function.interpolation.bicubic(img_2B, width, height, x_2B, y_2B)
-
-       # padding
-       pad = Len + 1  # Sobel need more 1 pixel to expand boarder
-       img_2B_sub_pad = cv.copyMakeBorder(img_2B_sub, pad, pad, pad, pad, borderType=cv.BORDER_REFLECT)
-       sobel_2B_y = cv.Sobel(img_2B_sub_pad, cv.CV_64F, 0, 1)*0.125 # y方向
-       sobel_2B_x = cv.Sobel(img_2B_sub_pad, cv.CV_64F, 1, 0)*0.125 # x方向
-
-       sobel_2B_x = sobel_2B_x[pad:-pad, pad:-pad]
-       sobel_2B_y = sobel_2B_y[pad:-pad, pad:-pad]
-
-       return C2_B_x, C2_B_y, sobel_2B_x, sobel_2B_y, img_2B_sub
+       return C2_B_x, C2_B_y
