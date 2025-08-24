@@ -7,11 +7,11 @@ import os
 import time
 import Config as CF
 import Config_user as CF_user
-import function.interpolation
 import function.hessian
 import function.DIC_1B2B
 import function.DIC_1B1A
 import function.DIC_2B2A
+import function.ICGN
 import function.calibration.image_calibration as img_cal
 from function.tool.click_tool import click_recorder
 
@@ -235,7 +235,7 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         WC_bef_zone[P+side_len_half][L+side_len_half][2] = Z_origin
         
         ## ========== pre-calculate H_inv_2A2B, J_2A2B ==========
-        ## 1B1A
+        ## 1B1A ##
         Len_1B1A = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1))
         img_grad_1B1A_x = sobel_1B_x_whole_img[C1_B_y-Len_1B1A:C1_B_y+Len_1B1A+1,\
                                                C1_B_x-Len_1B1A:C1_B_x+Len_1B1A+1]
@@ -243,32 +243,27 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
                                                C1_B_x-Len_1B1A:C1_B_x+Len_1B1A+1]
         H_inv_1B1A, J_1B1A =\
             function.hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_1B1A, img_grad_1B1A_x, img_grad_1B1A_y)
-        # store H and J
+        # store Hessian and Jacobian
         H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:] = H_inv_1B1A[:][:]
         J1B1A_all[P+side_len_half][L+side_len_half][:][:][:] = J_1B1A[:][:][:]
         
-        ## 2B2A
+        ## 2B2A ##
         Len_2B2A = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1))
-        # calculate
-        img_2B_sub = np.zeros((CF_user.TEST_SUBSET_SIZE_2B2A,CF_user.TEST_SUBSET_SIZE_2B2A), dtype=np.float64)
-        for local_y in range(-Len_2B2A,Len_2B2A+1,1):
-                for local_x in range(-Len_2B2A,Len_2B2A+1,1):
-                        img_x_2B = C2_B_x + local_x
-                        img_y_2B = C2_B_y + local_y
-                        img_2B_sub[local_y+Len_2B2A][local_x+Len_2B2A] =\
-                                function.interpolation.bicubic(img_2B_rec_gray, width, height, img_x_2B, img_y_2B)
+        C2B_subset_center_pt = np.array((C2_B_x,C2_B_y), dtype=np.float64)
+        # update img_2B_sub
+        img_2B_sub = function.ICGN.update_target_img_subset(CF_user.TEST_SUBSET_SIZE_2B2A, img_2B_rec_gray, C2B_subset_center_pt)
         # padding
         pad = Len_2B2A + 1  # Sobel need more 1 pixel to expand boarder
         img_2B_sub_pad = cv.copyMakeBorder(img_2B_sub, pad, pad, pad, pad, borderType=cv.BORDER_REFLECT)
         sobel_2B_y_whole_img = cv.Sobel(img_2B_sub_pad, cv.CV_64F, 0, 1)*0.125 # y方向
         sobel_2B_x_whole_img = cv.Sobel(img_2B_sub_pad, cv.CV_64F, 1, 0)*0.125 # x方向
-
+        # image gradient of 2B2A
         img_grad_2B2A_y = sobel_2B_y_whole_img[pad:-pad, pad:-pad]
         img_grad_2B2A_x = sobel_2B_x_whole_img[pad:-pad, pad:-pad]
         
         H_inv_2B2A, J_2B2A =\
             function.hessian.get_Hinv_jacobian(CF_user.TEST_SUBSET_SIZE_2B2A, img_grad_2B2A_x, img_grad_2B2A_y) 
-        # store H and J
+        # store Hessian and Jacobian
         H2B2A_inv_all[P+side_len_half][L+side_len_half][:][:] = H_inv_2B2A[:][:]
         J2B2A_all[P+side_len_half][L+side_len_half][:][:][:] = J_2B2A[:][:][:]
 
