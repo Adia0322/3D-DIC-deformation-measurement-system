@@ -18,9 +18,6 @@ from function.tool.click_tool import click_recorder
 print(f"pwd: {os.getcwd()}")
 print(f"WORKSPACE: {CF.WORKSPACE}\n")
 
-# folder address
-#CF_user.TEST_IMG_DIR = 'Target20230901-1'
-
 # in-plane:0, out-of-plane:1
 if CF_user.TEST_MODE_EN == 0:
     force_direction = str('in')
@@ -130,7 +127,7 @@ print(f"C2_B_y_ini: {C2_B_y_ini}")
 print("")
 
 # Due to the large distance (disparity) between the two cameras, a translational distance is set to facilitate DIC in quickly finding corresponding points in the 2B image.
-translate_1B2B = C1_B_x_ini - C2_B_x_ini  # !!!!!!!!!!!!!!! 修改過
+translate_1B2B = C1_B_x_ini - C2_B_x_ini
 print(f"translate_1B2B:{translate_1B2B}")
 if translate_1B2B < 0:
     print(f"translate_1B2B: {translate_1B2B} < 0 !!")
@@ -223,19 +220,19 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         C2B_points[P+side_len_half][L+side_len_half][0] = C2_B_y
         C2B_points[P+side_len_half][L+side_len_half][1] = C2_B_x
         ## initial 3d coordinate
-        # 計算視差 xl-xr (unit:pixel)
-        Disparity_1B2B = (C1_B_x - C2_B_x) 
-        Disparity_1B2B_reci = np.divide(1, Disparity_1B2B)
+        # get disparity: xl-xr (unit:pixel)
+        disparity_1B2B = (C1_B_x - C2_B_x) 
+        disparity_1B2B_reci = np.divide(1, disparity_1B2B)
         # 3D coordinate of Reference point (initial)
-        X_origin = (C1_B_x-principal_x)*baseline*Disparity_1B2B_reci
-        Y_origin = (C1_B_y-principal_y)*baseline*Disparity_1B2B_reci
-        Z_origin = focal*baseline*Disparity_1B2B_reci
+        X_origin = (C1_B_x-principal_x)*baseline*disparity_1B2B_reci
+        Y_origin = (C1_B_y-principal_y)*baseline*disparity_1B2B_reci
+        Z_origin = focal*baseline*disparity_1B2B_reci
         WC_bef_zone[P+side_len_half][L+side_len_half][0] = X_origin
         WC_bef_zone[P+side_len_half][L+side_len_half][1] = Y_origin
         WC_bef_zone[P+side_len_half][L+side_len_half][2] = Z_origin
         
-        ## ========== pre-calculate H_inv_2A2B, J_2A2B ==========
-        ## 1B1A ##
+        ## ========== pre-calculate Hessian & Jacobian for 1B1A & 2B2A ==========
+        ## ========== 1B1A ========== ##
         Len_1B1A = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1))
         img_grad_1B1A_x = sobel_1B_x_whole_img[C1_B_y-Len_1B1A:C1_B_y+Len_1B1A+1,\
                                                C1_B_x-Len_1B1A:C1_B_x+Len_1B1A+1]
@@ -247,7 +244,7 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:] = H_inv_1B1A[:][:]
         J1B1A_all[P+side_len_half][L+side_len_half][:][:][:] = J_1B1A[:][:][:]
         
-        ## 2B2A ##
+        ## ========== 2B2A ==========##
         Len_2B2A = int(0.5*(CF_user.TEST_SUBSET_SIZE_2B2A-1))
         C2B_subset_center_pt = np.array((C2_B_x,C2_B_y), dtype=np.float64)
         # update img_2B_sub
@@ -274,23 +271,11 @@ for P in range(-side_len_half,side_len_half+1,1): # -2 ~ +2
         img_2B_rec = cv.circle(img_2B_rec, (int(C2_B_x), int(C2_B_y)), 5,\
                                 (0, 255, 255), 1)
 
-# 指定陣列中心之追蹤點在2B之位置
-u2 = C2B_points[side_len_half][side_len_half][0]
-v2 = C2B_points[side_len_half][side_len_half][1]
-
 cv.imshow('img_1B_rec', img_1B_rec)
 cv.imshow('img_2B_rec', img_2B_rec)
 cv.waitKey(0)
 cv.destroyAllWindows()
 
-
-# ===================================== =============================
-
-"""  決定擬合平面與追蹤點第4個點  """
-# #平面法向量
-# nVector = Points2Plane.normalVector(WC_bef_zone, side_len)
-# #正規化
-# nVector = nVector/np.linalg.norm(nVector)
 
 dis_sum = 0
 img_idx = 1
@@ -341,7 +326,7 @@ for img_idx in range(1,2,1):
     
     start2 = time.time()
     
-    # 同張影像陣列目標點追蹤
+    # Track points
     for P in range(-side_len_half,side_len_half+1,1):
         for L in range(-side_len_half,side_len_half+1,1):
             C1_B_y = C1B_points[P+side_len_half][L+side_len_half][0] #integer
@@ -349,20 +334,14 @@ for img_idx in range(1,2,1):
             C2_B_y = C2B_points[P+side_len_half][L+side_len_half][0] #decimal
             C2_B_x = C2B_points[P+side_len_half][L+side_len_half][1] #decimal
             
+            ## ========== 1B1A ========== ##
             # Time start
             start = time.time()
-            
-            # len_half = length_half_1B1A = length_half_2B2A
-            len_half = int(0.5*(CF_user.TEST_SUBSET_SIZE_1B1A-1)+0.5*(CF_user.TEST_SCAN_SIZE_1B1A-1))
-            
-            # Time start _1B1A
             start_1B1A = time.time()
-            
-            # H, J
+            # Hessian & Jacobian
             H_inv_1B1A[:][:] = H1B1A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_1B1A[:][:][:] = J1B1A_all[P+side_len_half][L+side_len_half][:][:][:]
-    
-            # 搜尋對應點
+            # Scan
             C1_A_x, C1_A_y, Coef_1B1A =\
                 function.DIC_1B1A.find_pt_1B1A(img_1B_rec_gray,
                                                 img_1A_rec_gray,
@@ -376,13 +355,11 @@ for img_idx in range(1,2,1):
             time_1B1A = end_1B1A - start_1B1A
             # print('time_1B1A:',time_1B1A)
             
-            # Time start _2B2A
+            ## ========== 2B2A ========== ##
+            # Time start 2B2A
             start_2B2A = time.time()
-            
-            # 提取1B2B計算之img_2B灰階值矩陣
             img_2B_sub = img_2B_sub_zone[P+side_len_half][L+side_len_half]
-       
-            # H, J
+            # Hessian & Jacobian
             H_inv_2B2A[:][:] = H2B2A_inv_all[P+side_len_half][L+side_len_half][:][:]
             J_2B2A[:][:][:] = J2B2A_all[P+side_len_half][L+side_len_half][:][:][:]
             
@@ -399,20 +376,20 @@ for img_idx in range(1,2,1):
             time_2B2A = end_2B2A - start_2B2A
             # print('time_2B2A:',time_2B2A)
             
-            """ 計算當前目標點之世界座標  """
-            # 計算視差 xl-xr (unit:pixel)
-            Disparity_1A2A = (C1_A_x - C2_A_x)
-            Disparity_1A2A_reci = np.divide(1, Disparity_1A2A)
-            X_after = (C1_A_x-principal_x)*baseline*Disparity_1A2A_reci
-            Y_after = (C1_A_y-principal_y)*baseline*Disparity_1A2A_reci
-            Z_after = focal*baseline*Disparity_1A2A_reci
+            """ current world coordinate  """
+            # get disparity: xl-xr (unit:pixel)
+            disparity_1A2A = (C1_A_x - C2_A_x)
+            disparity_1A2A_reci = np.divide(1, disparity_1A2A)
+            X_after = (C1_A_x-principal_x)*baseline*disparity_1A2A_reci
+            Y_after = (C1_A_y-principal_y)*baseline*disparity_1A2A_reci
+            Z_after = focal*baseline*disparity_1A2A_reci
             
             # Displacement between reference point and target point
             WC_aft_zone[P+side_len_half][L+side_len_half][0] = X_after
             WC_aft_zone[P+side_len_half][L+side_len_half][1] = Y_after
             WC_aft_zone[P+side_len_half][L+side_len_half][2] = Z_after
             disM[P+side_len_half][L+side_len_half][:] = WC_aft_zone[P+side_len_half][L+side_len_half][:] - WC_bef_zone[P+side_len_half][L+side_len_half][:]
-            # out:z, in1:x(水平向右+), in2:y(垂直向下+)
+            # out:z, in1:x(right+), in2:y(down+)
             dis_out = WC_aft_zone[P+side_len_half][L+side_len_half][2]-WC_bef_zone[P+side_len_half][L+side_len_half][2]
             #dis_out2 = np.dot(disM[P+side_len_half][L+side_len_half],nVector)
             dis_in_1 = WC_aft_zone[P+side_len_half][L+side_len_half][0]-WC_bef_zone[P+side_len_half][L+side_len_half][0]

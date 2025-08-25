@@ -3,6 +3,7 @@ import numpy as np
 from ctypes import cdll, c_int, c_double, POINTER
 import Config as CF
 import time
+import function.ICGN
 
 def find_pt_info_1B2B(img_1B,
                       img_2B,
@@ -22,7 +23,6 @@ def find_pt_info_1B2B(img_1B,
        img_bef = np.array(img_1B, dtype=np.int32)
        img_aft = np.array(img_2B, dtype=np.int32)
 
-       height, width = img_aft.shape
        # displacement array
        Displacement = np.zeros((2,), dtype=np.int32) # 依序為 [y, x]
        # index & CoefValue of correlation coeffition
@@ -84,7 +84,7 @@ def find_pt_info_1B2B(img_1B,
        yx = 0
        yy = 0
        # warp function coefficient of deformed subset
-       warp_aft_coef = np.array([(1+xx, xy, x),\
+       warp_function = np.array([(1+xx, xy, x),\
                                  (yx, 1+yy, y),\
                                  (0, 0, 1)], dtype=np.float64)
 
@@ -93,35 +93,8 @@ def find_pt_info_1B2B(img_1B,
        limit = 0.1
        point_ini = np.array((C2_B_x_guess,C2_B_y_guess), dtype=np.float64)
        img_2B = img_2B.astype(np.float64)
-       img_2B_flat = img_2B.flatten(order='C') # C:n row major
-       while limit > 0.001 and cnt < 20:
-              target_matrix_g_flat = np.zeros(Size*Size, dtype=np.float64) # create new 1d array
-              # ========== 
-              m = cdll.LoadLibrary(f'{CF.DLL_DIR}/ICGN.dll')
-              
-              m.update_target_img_subset.argtypes = [
-              POINTER(c_double), POINTER(c_double), POINTER(c_double), POINTER(c_double),
-              c_int, c_int, c_int
-              ]
-
-              m.update_target_img_subset.restype = None
-
-              img_2B_flat_ptr = img_2B_flat.ctypes.data_as(POINTER(c_double))
-              target_matrix_g_flat_ptr = target_matrix_g_flat.ctypes.data_as(POINTER(c_double))
-              point_ini_ptr = point_ini.ctypes.data_as(POINTER(c_double))
-              warp_aft_coef_ptr = warp_aft_coef.ctypes.data_as(POINTER(c_double))
-              # call dll
-              m.update_target_img_subset(img_2B_flat_ptr,
-                                         target_matrix_g_flat_ptr,
-                                         point_ini_ptr,
-                                         warp_aft_coef_ptr,
-                                         width,
-                                         height,
-                                         Size)
-
-              target_matrix_g = target_matrix_g_flat.reshape((Size, Size)) 
-              # ========== 
-              # print(f"limit: {limit}")
+       while limit > 0.0001 and cnt < 20:
+              target_matrix_g = function.ICGN.update_target_img_subset(Size, img_2B, point_ini, warp_function)
               # compute g_average
               g_average = np.mean(target_matrix_g)
               # compute delata_g (standard deviation)
@@ -137,22 +110,21 @@ def find_pt_info_1B2B(img_1B,
               delta_P = (-H_inv_1B2B @ corelation_sum).flatten() # flatten turn 2d array to 1d array to get scalar
               # Update limit (if limit is enough small, then quit)
               limit = np.sqrt(np.square(delta_P[0]) + np.square(delta_P[1]*Len)+
-                            np.square(delta_P[2]*Len) + np.square(delta_P[3])+
-                            np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
+                              np.square(delta_P[2]*Len) + np.square(delta_P[3])+
+                              np.square(delta_P[4]*Len) + np.square(delta_P[5]*Len))
 
-              warp_inc_coef = np.array([[1+delta_P[1], delta_P[2], delta_P[0]],
-                                       [delta_P[4], 1+delta_P[5], delta_P[3]],
-                                       [0, 0, 1]], dtype=np.float64)
+              warp_inc_function = np.array([[1+delta_P[1], delta_P[2], delta_P[0]],
+                                           [delta_P[4], 1+delta_P[5], delta_P[3]],
+                                           [0, 0, 1]], dtype=np.float64)
 
-              warp_inc_coef_inv = np.linalg.inv(warp_inc_coef)
+              warp_inc_function_inv = np.linalg.inv(warp_inc_function)
               # update warp function
-              warp_aft_coef = warp_aft_coef @ warp_inc_coef_inv
+              warp_function = warp_function @ warp_inc_function_inv
               cnt += 1
-              # print(f"limit={limit}")
               
-       X = warp_aft_coef[0][2] # 水平
-       Y = warp_aft_coef[1][2] # 垂直
-       print(f"(X,Y)=({X},{Y})")
+       X = warp_function[0][2] # horizontal
+       Y = warp_function[1][2] # vertical
+       print(f"(X,Y)=({X:.3f},{Y:.3f})")
        C2_B_y = Y + C2_B_y_guess
        C2_B_x = X + C2_B_x_guess
        return C2_B_x, C2_B_y
