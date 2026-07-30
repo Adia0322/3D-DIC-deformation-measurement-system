@@ -37,6 +37,11 @@ then try again.
 pip install opencv-python
 pip install matplotlib
 ```
+* Clone with submodules
+```shell
+git clone --recurse-submodules <URL>
+```
+
 ### STEP1: capture checkerboard images (10 more)
 * Objection:   
 correct the two images to parallel to each others, make the result more precise  
