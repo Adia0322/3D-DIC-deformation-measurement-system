@@ -21,15 +21,16 @@ TARGET_INTERP        =      build/$(OUTPUT_INTERP)
 TARGET_ICGN          =      build/$(OUTPUT_ICGN)
 
 # define all source (find .c)
-SRCS_PSO             =      $(wildcard PSO/src/core/PSO_core.c) \
-                            $(wildcard PSO/src/core/PSO.c) \
-							$(wildcard PSO/src/core/ICGN_core.c) \
-                            $(wildcard PSO/src/factory/PSO_factory.c) \
-                            $(wildcard PSO/src/interp/interpolation_core.c) \
-                            $(wildcard PSO/src/system/sys_maneger.c) \
-                            $(wildcard PSO/src/system/system_comm.c) \
+SRCS_PSO             =      $(wildcard PSO/core/*.c) \
+                            $(wildcard PSO/core/cost_function/*.c) \
+                            $(wildcard PSO/factory/*.c) \
+                            $(wildcard PSO/system/*.c) \
+							$(wildcard PSO/tool/*.c) \
+                            $(wildcard PSO/tool/math/*.c) \
+							$(wildcard PSO/tool/interp/*.c)
 
 HEADERS_PSO          =      $(wildcard PSO/include/*.h) \
+							$(wildcard PSO/include/cost_function/*.h) \
                             $(wildcard DIC/include/*.h) \
                             $(wildcard tools/interpolation/include/*.h)
 
@@ -49,13 +50,13 @@ prepare:
 .PHONY: all
 all: prepare $(TARGET_PSO) $(TARGET_INTERP) $(TARGET_ICGN)
 
-$(TARGET_PSO): $(SRCS_PSO)
+$(TARGET_PSO): $(SRCS_PSO) $(HEADERS_PSO)
 	$(CC) $(CFLAGS) $(SRCS_PSO) -o $(TARGET_PSO) $(LDFLAGS)
 
-$(TARGET_INTERP): $(SRCS_INTERP)
+$(TARGET_INTERP): $(SRCS_INTERP) $(HEADERS_INTERP)
 	$(CC) $(CFLAGS) $(SRCS_INTERP) -o $(TARGET_INTERP) $(LDFLAGS)
 
-$(TARGET_ICGN): $(SRCS_ICGN)
+$(TARGET_ICGN): $(SRCS_ICGN) $(HEADERS_ICGN)
 	$(CC) $(CFLAGS) $(SRCS_ICGN) -o $(TARGET_ICGN) $(LDFLAGS)
 
 .PHONY: clean

@@ -245,7 +245,7 @@ class Library:
         return
     
     def _set_type_PSO(self):
-        self.PSO.process_image.argtypes = [
+        self.PSO.pso_optimize.argtypes = [
             ctypes.POINTER(ctypes.c_double),    # ref_img
             ctypes.POINTER(ctypes.c_double),    # cur_img
             ctypes.c_int,                       # width
@@ -256,7 +256,7 @@ class Library:
             ctypes.POINTER(ctypes.c_double),    # img_cur_pt
             ctypes.POINTER(ctypes.c_double)     # result_buffer
         ]
-        self.PSO.process_image.restype = None
+        self.PSO.pso_optimize.restype = None
         return
     
     def _set_type_interp(self):

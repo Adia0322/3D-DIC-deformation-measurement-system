@@ -29,7 +29,7 @@ def run_PSO(dic_config: DIC_config, lib_PSO, PSO_proc):
     PSO_proc._ref_pt_pos[0] = img_ref_y; PSO_proc._ref_pt_pos[1] = img_ref_x
     PSO_proc._cur_pt_pos[0] = img_ref_pt_y_guess; PSO_proc._cur_pt_pos[1] = img_ref_pt_x_guess
 
-    lib_PSO.process_image(
+    lib_PSO.pso_optimize(
             img_ref_ptr, 
             img_cur_ptr, 
             w, 
