@@ -38,27 +38,30 @@ HEADERS_INTERP       =      $(wildcard tools/interpolation/include/*.h)
 SRCS_ICGN            =      $(wildcard DIC/ICGN_subset_warping.c)
 HEADERS_ICGN         =      $(wildcard DIC/include/*.h)
 
+.PHONY: check
 check:
 	@echo $(SRCS_PSO)
 
+.PHONY: prepare
 prepare:
 	@if not exist $(BUILD_DIR) mkdir $(BUILD_DIR)
 
+.PHONY: all
 all: prepare $(TARGET_PSO) $(TARGET_INTERP) $(TARGET_ICGN)
 
 $(TARGET_PSO): $(SRCS_PSO)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(SRCS_PSO) -o $(TARGET_PSO) $(LDFLAGS)
 
 $(TARGET_INTERP): $(SRCS_INTERP)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(SRCS_INTERP) -o $(TARGET_INTERP) $(LDFLAGS)
 
 $(TARGET_ICGN): $(SRCS_ICGN)
-	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) $(SRCS_ICGN) -o $(TARGET_ICGN) $(LDFLAGS)
 
+.PHONY: clean
 clean:
 	@if exist $(BUILD_DIR) del /f /q $(BUILD_DIR)\*.dll
 
-.PHONY: all clean
 
 # $^: source files
 # $@: target files

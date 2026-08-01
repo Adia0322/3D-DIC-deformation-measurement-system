@@ -18,22 +18,22 @@ class DIC_user_config:
 
 class Stereo_DIC_result:
     def __init__(self):
-        self.X_after            = None
-        self.Y_after            = None
-        self.Z_after            = None
+        self.X_after                    = None
+        self.Y_after                    = None
+        self.Z_after                    = None
 
 class Stereo_DIC_session:
     def __init__(self, cfg: DIC_user_config):
-        self.cfg                = cfg
-        self.img_buf            = img_buffer()
-        self.cal_info           = calibration_info()
-        self.dic_buf            = DIC_buffer(cfg)
-        self.lib                = Library()
-        self.result_buf         = result_buffer(cfg)
-        self.icgn_proc_1B2B     = ICGN_processor(cfg.subset_len_1B2B)
-        self.icgn_proc_1B1A     = ICGN_processor(cfg.subset_len_1B1A)
-        self.icgn_proc_2B2A     = ICGN_processor(cfg.subset_len_2B2A)
-        self.pso_proc           = PSO_processor()
+        self.cfg                        = cfg
+        self.img_buf                    = img_buffer()
+        self.cal_info                   = calibration_info()
+        self.dic_buf                    = DIC_buffer(cfg)
+        self.lib                        = Library()
+        self.result_buf                 = result_buffer(cfg)
+        self.icgn_proc_1B2B             = ICGN_processor(cfg.subset_len_1B2B)
+        self.icgn_proc_1B1A             = ICGN_processor(cfg.subset_len_1B1A)
+        self.icgn_proc_2B2A             = ICGN_processor(cfg.subset_len_2B2A)
+        self.pso_proc                   = PSO_processor()
         
     def get_img_dir(self, cam_idx):
         if (CF_user.TEST_MODE == 0):
@@ -326,10 +326,10 @@ class PSO_processor:
 
 class system_config:
     def __init__(self):
-        self._img_ref                   = None
-        self._img_cur                   = None
-        self._result_buffer             = None
-        self._img_ref_pt_pos            = None
-        self._img_cur_pt_pos            = None
-        self._result_buffer             = None
+        self._img_ref                       = None
+        self._img_cur                       = None
+        self._result_buffer                 = None
+        self._img_ref_pt_pos                = None
+        self._img_cur_pt_pos                = None
+        self._result_buffer                 = None
 
