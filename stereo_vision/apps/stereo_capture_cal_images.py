@@ -1,6 +1,6 @@
 
 ### ===== Generate_Chessboard_Image ===== ###
-print("Start STEP1_GenerateCBImage.py !")
+print("Start stereo_capture_cal_images.py !")
 import cv2 as cv
 import glob
 import os
@@ -78,4 +78,4 @@ while (cap1.isOpened() and cap2.isOpened()):
 cap1.release()
 cap2.release()
 cv.destroyAllWindows()
-print("Finished STEP1_GenerateCBImage.py !")
+print("Finished stereo_capture_cal_images.py !")

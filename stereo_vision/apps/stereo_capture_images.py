@@ -1,26 +1,16 @@
-"""
-Stereo Vision
 
-執行前注意事項:
-    1.相機對應編號
-    
-手動影像存檔位址:
-    ./images/Target/cam1/
-"""
 import cv2 as cv
 import config as CF
 import config_user as CF_user
 from stereo_vision.tools.vision.src.processor import rotate_image
 from stereo_vision.tools.vision.src.processor import click_event
-### ===== 參數設定 ===== ###
-# camera index
+
 cam_index_left = 1
 cam_index_right = 0
 img_cnt = 1   # 相片編號
 
 print("\n Stereo_DIC_PSO_ICGN ")
 
-# Camera parameters to undistort and rectify images
 cv_file = cv.FileStorage()
 cv_file.open(CF.STEREO_MAP_PATH, cv.FileStorage_READ)
 
@@ -30,18 +20,17 @@ stereoMapR_x = cv_file.getNode('stereoMapR_x').mat()
 stereoMapR_y = cv_file.getNode('stereoMapR_y').mat()
 cv_file.release()
 
-# Open both cameras (注意相機編號!!!)
 cap_left =  cv.VideoCapture(cam_index_left, cv.CAP_DSHOW)
 cap_right = cv.VideoCapture(cam_index_right, cv.CAP_DSHOW)                    
 
 if CF_user.CAM_BUFFER_SIZE_EN:
     cap_left.set(cv.CAP_PROP_BUFFERSIZE,0)
     cap_right.set(cv.CAP_PROP_BUFFERSIZE,0)
-# white balance
+
 if CF_user.CAM_AUTO_WB_EN:
     cap_left.set(cv.CAP_PROP_AUTO_WB,0)
     cap_right.set(cv.CAP_PROP_AUTO_WB,0)
-#  auto focus
+
 if CF_user.CAM_AUTO_FOCAL_EN:
     cap_left.set(cv.CAP_PROP_AUTOFOCUS,0)
     cap_right.set(cv.CAP_PROP_AUTOFOCUS,0)
@@ -52,7 +41,7 @@ else:
 cv.namedWindow("frame left", cv.WINDOW_NORMAL)
 cv.namedWindow("frame right", cv.WINDOW_NORMAL)
 
-# origin text corrfinate in img_C1_new (not important)
+# origin text corrdinate in img_C1_new (not important)
 row_c1 = -10
 col_c1 = -10
 
