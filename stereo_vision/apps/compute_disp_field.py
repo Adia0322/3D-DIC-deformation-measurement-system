@@ -3,7 +3,6 @@ print("\n<< Stereo_DIC_PSO_ICGN >>")
 import cv2 as cv
 import time
 from stereo_vision import config_user as CF_user
-from stereo_vision.DIC.session import create_session
 from stereo_vision.tools.vision.src.click_tool import get_click_point
 import stereo_vision.DIC.run as run_dic
 import stereo_vision.DIC.init as dic_init
@@ -110,7 +109,7 @@ cv.imshow('img_2A_rec', session.img_buf.img2_cur_rec)
 cv.waitKey(0)
 cv.destroyAllWindows()
 
-print('Average time per point: ', total_time / (CF_user.TEST_POINT_ARRAY * CF_user.TEST_TARGET_IMG_PAIR_NUM))
-print('Average dis:', dis_sum / (CF_user.TEST_TARGET_IMG_PAIR_NUM * CF_user.TEST_POINT_ARRAY))
+print(f"Average time per point: {total_time / (CF_user.TEST_POINT_ARRAY * CF_user.TEST_TARGET_IMG_PAIR_NUM):.6f}")
+print(f"Average dis: {dis_sum / (CF_user.TEST_TARGET_IMG_PAIR_NUM * CF_user.TEST_POINT_ARRAY):.6f}")
 print("End")
 

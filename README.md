@@ -21,6 +21,10 @@ It is designed for:
 ## Example:
 Below shows displacement measurement of a **deformed rubber surface with speckle pattern**:
 ## How to run:
+* Enviroment  
+> Windows 11  
+> MinGW GCC  
+> Python 3.13.3  
 * Clone with submodules
 ```shell
 git clone --recurse-submodules <URL>
@@ -32,11 +36,10 @@ python -m venv venv
 .\venv\Scripts\Activate.ps1 # Activating
 ```
 
-if it show error msg while Activating, run below command first:
+if it show error msg while activating, run below command first, and try again:
 ```shell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 ```
-then try again.
 
 * Install Modules in venv:
 ```shell
@@ -44,25 +47,24 @@ pip install opencv-python
 pip install matplotlib
 ```
 
-### STEP1: capture checkerboard images (10 more)
+### STEP1: capture checkerboard images (skip if use example case)
 * Objection:   
 correct the two images to parallel to each others, make the result more precise  
 * How to:  
-capture severals checkerboards image, and run stereo camera calibration to obtain the intrinsic and extrinsic params. Use params to rectify images.  
+capture severals checkerboards images (10 mores), and run stereo camera calibration to obtain the intrinsic and extrinsic params. Use params to rectify images.  
 
-Ternminal:
-  
+Ternminal:  
 ```
 python -m stereo_vision.apps.stereo_capture_cal_images
 ```
 ### left camera:　　
 
-![camera1 image2](https://github.com/Adia0322/Stereo-digital-image-correlation/assets/89566671/f4016d4d-7cb0-4e49-b08b-fdda729ab5be)　　
+<img src="stereo_vision/data/readme/1-1.jpg" width="70%">　
 
 
 ### right camera:　　
 
-![camera2 image2](https://github.com/Adia0322/Stereo-digital-image-correlation/assets/89566671/9a6a3aaa-752d-4090-aebc-e46d18fc7bf4)　　
+<img src="stereo_vision/data/readme/1-2.jpg" width="70%">　
 
   
 
@@ -73,7 +75,7 @@ Run stereo camera calibration to obtain the intrinsic and extrinsic params, and 
 python -m stereo_vision.apps.stereo_calibration
 ```
 
-![step2](https://github.com/Adia0322/Stereo-digital-image-correlation/assets/89566671/b11a0ef2-1789-4eb8-ad4d-472e5f6ff5a9)
+<img src="stereo_vision/data/readme/2-1.jpg" width="100%">　
 
 
 ### STEP3: measure the displacement of the surface on rubber
@@ -87,15 +89,15 @@ mingw32-make all
 python -m stereo_vision.apps.compute_disp_field
 ```
 I. First, users need to select the points of interest (tracking points) that they want to track:
-<img src="stereo_vision/data/readme/1-1.png" width="70%">
-<img src="stereo_vision/data/readme/1-2.png" width="70%">
+<img src="stereo_vision/data/readme/3-1.png" width="70%">
+<img src="stereo_vision/data/readme/3-2.png" width="70%">
 
 II. The system then searches for the corresponding points in the stereo image pair and estimates the initial 3D coordinates of all selected tracking points:
-<img src="stereo_vision/data/readme/2-1.png" width="100%">
+<img src="stereo_vision/data/readme/3-3.png" width="100%">
 
 III. Finally, the system compares the reference and target images to calculate the average surface displacement of the rubber specimen:  
-<img src="stereo_vision/data/readme/3-1.png" width="100%">
+<img src="stereo_vision/data/readme/3-4.png" width="100%">
 
 ## Example Result
 > Average time per point:  0.002 (s)  
-> Average dis: 1.097 (mm)
+> Average in-plain displacement: 1.097 (mm)
