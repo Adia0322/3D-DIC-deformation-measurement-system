@@ -1,7 +1,7 @@
 
 import cv2 as cv
-import config as CF
-import config_user as CF_user
+import config.base as CF
+import config.user as CF_user
 from tools.vision.src.processor import rotate_image
 from tools.vision.src.processor import click_event
 

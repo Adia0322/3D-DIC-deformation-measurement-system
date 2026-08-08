@@ -1,8 +1,9 @@
-## PATH
+# path
 import os
-import config_user as CF_user
-current_file_path               = os.path.abspath(__file__)
-WORKSPACE                       = os.path.dirname(current_file_path)
+import config.user as CF_user
+cwd = os.getcwd()
+CURRENT_DIR                     = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE                       = os.path.dirname(CURRENT_DIR)
 BUILD_DIR                       = os.path.join(WORKSPACE, "build")
 IMAGE_DIR                       = os.path.join(WORKSPACE, "data")
 IMAGE_CAL_DIR                   = os.path.join(IMAGE_DIR, "calibration")
@@ -15,7 +16,7 @@ IMAGE_TARGET_IN_CAM1_DIR        = os.path.join(IMAGE_DIR, CF_user.TEST_IMG_DIR, 
 IMAGE_TARGET_IN_CAM2_DIR        = os.path.join(IMAGE_DIR, CF_user.TEST_IMG_DIR, "in", "cam2")
 IMAGE_TARGET_OUT_CAM1_DIR       = os.path.join(IMAGE_DIR, CF_user.TEST_IMG_DIR, "out", "cam1")
 IMAGE_TARGET_OUT_CAM2_DIR       = os.path.join(IMAGE_DIR, CF_user.TEST_IMG_DIR, "out", "cam2")
-STEREO_MAP_PATH                 = f"{BUILD_DIR}/stereoMap.xml"
+STEREO_MAP_PATH                 = os.path.join(BUILD_DIR, "stereoMap.xml")
 
 
 

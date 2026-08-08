@@ -1,8 +1,8 @@
 import numpy as np
 import os
 import cv2 as cv
-import config as CF
-import config_user as CF_user
+import config.base as CF
+import config.user as CF_user
 import ctypes
 from ctypes import cdll, c_int, c_double, POINTER
 import camera_calibration.image_calibration as img_cal

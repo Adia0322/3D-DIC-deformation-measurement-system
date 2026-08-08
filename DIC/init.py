@@ -1,4 +1,4 @@
-import config_user as CF_user
+import config.user as CF_user
 import tools.math.src.hessian as lib_hessian
 import cv2 as cv
 import numpy as np

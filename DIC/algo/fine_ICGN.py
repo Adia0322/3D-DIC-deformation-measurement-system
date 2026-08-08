@@ -2,9 +2,9 @@
 import numpy as np
 import time
 import ctypes
-import config as CF
-import config_user as CF_user
-from config_DIC import DIC_config
+import config.base as CF
+import config.user as CF_user
+from config.dic import DIC_config
 from DIC.common import DIC_search_pt_type
 
 def inverse_warp_func(delta_P):

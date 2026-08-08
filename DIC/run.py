@@ -1,12 +1,12 @@
 from enum import IntEnum
 import numpy as np
-import config_user as CF_user
+import config.user as CF_user
 import DIC.common as dic_common
 import DIC.algo.coarse_PSO as coarse_PSO
 import DIC.algo.fine_ICGN as fine_ICGN
 
 from copy import deepcopy
-from config_DIC import (
+from config.dic import (
     DIC_config, DIC_Image, Img_Ref_Pt_Pos, 
     Stereo_DIC_Init_Param, Subset_Info, 
     Img_Grad_Info, Coarse_Search_Method, PSO_Config
@@ -15,7 +15,7 @@ from config_DIC import (
 def set_base_dic_cfg():
     base_cfg = DIC_config (
         coarse_method       = Coarse_Search_Method.PSO,
-        coarse_method_cfg   = PSO_Config(CF_user.PSO_population),
+        coarse_method_cfg   = PSO_Config(CF_user.PSO_POPULATION),
 
         dic_image           = DIC_Image(ref = None, cur = None),
         img_ref_pt          = None,

@@ -33,7 +33,7 @@ git clone --recurse-submodules <URL>
 * Create new venv
 ```shell
 python -m venv venv
-.\venv\Scripts\Activate.ps1 # Activating
+.\venv\Scripts\Activate.ps1
 ```
 
 If it show error msg while activating, run below command first, and try again:
@@ -54,8 +54,8 @@ correct the two images to parallel to each others, make the result more precise
 capture severals checkerboards images (10 mores), and run stereo camera calibration to obtain the intrinsic and extrinsic params. Use params to rectify images.  
 
 Ternminal:  
-```
-python -m apps.stereo_capture_cal_images
+```shell
+mingw32-make capture_cal
 ```
 ### Left camera:　　
 
@@ -68,8 +68,8 @@ python -m apps.stereo_capture_cal_images
 ### STEP2: camera calibration
 Run stereo camera calibration to obtain the intrinsic and extrinsic params, and use it to rectify images.
 
-```
-python -m apps.stereo_calibration
+```shell
+mingw32-make calibrate
 ```
 
 <img src="data/readme/2-1.jpg" width="100%">　
@@ -82,7 +82,7 @@ mingw32-make all
 ```
 * Run 3D measurement
 ```shell
-python -m apps.compute_disp_field
+mingw32-make compute
 ```
 I. First, user need to select the points of interest (tracking points) that they want to track:
 <img src="data/readme/3-1.png" width="70%">

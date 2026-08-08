@@ -1,4 +1,4 @@
-from config_DIC import DIC_config
+from config.dic import DIC_config
 import numpy as np
 import ctypes
 from DIC.common import DIC_search_pt_type

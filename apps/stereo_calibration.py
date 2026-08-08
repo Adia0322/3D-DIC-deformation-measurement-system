@@ -5,8 +5,8 @@ import numpy as np
 import cv2 as cv
 import glob
 import os
-import config as CF
-import config_user as CF_user
+import config.base as CF
+import config.user as CF_user
 
 os.makedirs(CF.BUILD_DIR, exist_ok=True)
 

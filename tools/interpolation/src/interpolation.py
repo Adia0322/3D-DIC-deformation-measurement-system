@@ -1,4 +1,4 @@
-import config as CF
+import config.base as CF
 import numpy as np
 from ctypes import cdll, c_int, c_double, POINTER
 import os

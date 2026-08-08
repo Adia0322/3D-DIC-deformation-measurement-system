@@ -66,3 +66,19 @@ clean:
 
 # $^: source files
 # $@: target files
+
+.PHONY: capture_cal
+capture_cal:
+	python -m apps.stereo_capture_images
+
+.PHONY: calibrate
+calibrate:
+	python -m apps.stereo_calibration
+
+.PHONY: capture
+capture:
+	python -m apps.stereo_capture_images
+
+.PHONY: compute
+compute:
+	python -m apps.compute_disp_field
