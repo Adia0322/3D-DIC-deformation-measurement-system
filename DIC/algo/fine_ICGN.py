@@ -2,10 +2,10 @@
 import numpy as np
 import time
 import ctypes
-import stereo_vision.config as CF
-from stereo_vision import config_user as CF_user
-from stereo_vision.config_DIC import DIC_config
-from stereo_vision.DIC.common import DIC_search_pt_type
+import config as CF
+import config_user as CF_user
+from config_DIC import DIC_config
+from DIC.common import DIC_search_pt_type
 
 def inverse_warp_func(delta_P):
        a = 1 + delta_P[1]

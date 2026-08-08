@@ -55,24 +55,24 @@ capture severals checkerboards images (10 mores), and run stereo camera calibrat
 
 Ternminal:  
 ```
-python -m stereo_vision.apps.stereo_capture_cal_images
+python -m apps.stereo_capture_cal_images
 ```
 ### Left camera:　　
 
-<img src="stereo_vision/data/readme/1-1.jpg" width="70%">　
+<img src="data/readme/1-1.jpg" width="70%">　
 
 ### Right camera:　　
 
-<img src="stereo_vision/data/readme/1-2.jpg" width="70%">　
+<img src="data/readme/1-2.jpg" width="70%">　
 
 ### STEP2: camera calibration
 Run stereo camera calibration to obtain the intrinsic and extrinsic params, and use it to rectify images.
 
 ```
-python -m stereo_vision.apps.stereo_calibration
+python -m apps.stereo_calibration
 ```
 
-<img src="stereo_vision/data/readme/2-1.jpg" width="100%">　
+<img src="data/readme/2-1.jpg" width="100%">　
 
 ### STEP3: measure the displacement of the surface on rubber
 Run the following command from the project root directory (3D-DIC_measurement_system/):  
@@ -82,17 +82,17 @@ mingw32-make all
 ```
 * Run 3D measurement
 ```shell
-python -m stereo_vision.apps.compute_disp_field
+python -m apps.compute_disp_field
 ```
 I. First, user need to select the points of interest (tracking points) that they want to track:
-<img src="stereo_vision/data/readme/3-1.png" width="70%">
-<img src="stereo_vision/data/readme/3-2.png" width="70%">
+<img src="data/readme/3-1.png" width="70%">
+<img src="data/readme/3-2.png" width="70%">
 
 II. The system then searches for the corresponding points in the stereo image pair and estimates the initial 3D coordinates of all selected tracking points:
-<img src="stereo_vision/data/readme/3-3.png" width="100%">
+<img src="data/readme/3-3.png" width="100%">
 
 III. Finally, the system compares the reference and target images to calculate the average surface displacement of the rubber specimen:  
-<img src="stereo_vision/data/readme/3-4.png" width="100%">
+<img src="data/readme/3-4.png" width="100%">
 
 ## Example Result
 > Average time per point:  0.002 (s)  

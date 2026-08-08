@@ -1,4 +1,4 @@
-[submodule "stereo_vision/PSO"]
-	path = stereo_vision/PSO
+[submodule "PSO"]
+	path = PSO
 	url = git@github.com:Adia0322/Particle_Swarm_Optimization.git
 	

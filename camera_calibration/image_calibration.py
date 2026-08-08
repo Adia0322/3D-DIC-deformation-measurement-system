@@ -1,5 +1,5 @@
 import cv2 as cv
-import stereo_vision.config as CF
+import config as CF
 # Camera parameters to undistort and rectify images
 cv_file = cv.FileStorage()
 cv_file.open(CF.STEREO_MAP_PATH, cv.FileStorage_READ)

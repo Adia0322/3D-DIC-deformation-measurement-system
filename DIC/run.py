@@ -1,12 +1,12 @@
 from enum import IntEnum
 import numpy as np
-from stereo_vision import config_user as CF_user
-import stereo_vision.DIC.common as dic_common
-import stereo_vision.DIC.algo.coarse_PSO as coarse_PSO
-import stereo_vision.DIC.algo.fine_ICGN as fine_ICGN
+import config_user as CF_user
+import DIC.common as dic_common
+import DIC.algo.coarse_PSO as coarse_PSO
+import DIC.algo.fine_ICGN as fine_ICGN
 
 from copy import deepcopy
-from stereo_vision.config_DIC import (
+from config_DIC import (
     DIC_config, DIC_Image, Img_Ref_Pt_Pos, 
     Stereo_DIC_Init_Param, Subset_Info, 
     Img_Grad_Info, Coarse_Search_Method, PSO_Config

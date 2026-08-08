@@ -1,5 +1,5 @@
-import stereo_vision.config_user as CF_user
-import stereo_vision.tools.math.src.hessian as lib_hessian
+import config_user as CF_user
+import tools.math.src.hessian as lib_hessian
 import cv2 as cv
 import numpy as np
 

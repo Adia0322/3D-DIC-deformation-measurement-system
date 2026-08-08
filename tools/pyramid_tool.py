@@ -1,4 +1,4 @@
-# import stereo_vision.config as CF
+# import config as CF
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,7 +34,7 @@ def get_pyramid_level(img, levels, max_level=3):
 
 if __name__ == "__main__":
     # read image (grayscale)
-    img = cv2.imread("stereo_vision/data/1.jpg", cv2.IMREAD_GRAYSCALE)
+    img = cv2.imread("data/1.jpg", cv2.IMREAD_GRAYSCALE)
 
     if img is None:
         raise ValueError("Image not found")

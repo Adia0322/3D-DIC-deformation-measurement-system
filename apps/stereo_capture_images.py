@@ -2,8 +2,8 @@
 import cv2 as cv
 import config as CF
 import config_user as CF_user
-from stereo_vision.tools.vision.src.processor import rotate_image
-from stereo_vision.tools.vision.src.processor import click_event
+from tools.vision.src.processor import rotate_image
+from tools.vision.src.processor import click_event
 
 cam_index_left = 1
 cam_index_right = 0

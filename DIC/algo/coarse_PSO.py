@@ -1,7 +1,7 @@
-from stereo_vision.config_DIC import DIC_config
+from config_DIC import DIC_config
 import numpy as np
 import ctypes
-from stereo_vision.DIC.common import DIC_search_pt_type
+from DIC.common import DIC_search_pt_type
 from ctypes import c_double
 
 def run_PSO(dic_config: DIC_config, lib_PSO, PSO_proc):

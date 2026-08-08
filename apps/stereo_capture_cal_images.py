@@ -6,8 +6,8 @@ import glob
 import os
 import config as CF
 import config_user as CF_user
-from stereo_vision.tools.vision.src.processor import rotate_image
-from stereo_vision.tools.vision.src.processor import delete_old_image
+from tools.vision.src.processor import rotate_image
+from tools.vision.src.processor import delete_old_image
 
 ## Delete old images
 left_jpg_files = glob.glob(f"{CF.IMAGE_CAL_LEFT_DIR}*.jpg")

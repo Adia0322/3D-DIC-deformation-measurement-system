@@ -1,6 +1,6 @@
 ## PATH
 import os
-import stereo_vision.config_user as CF_user
+import config_user as CF_user
 current_file_path               = os.path.abspath(__file__)
 WORKSPACE                       = os.path.dirname(current_file_path)
 BUILD_DIR                       = os.path.join(WORKSPACE, "build")

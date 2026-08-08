@@ -1,12 +1,12 @@
 import numpy as np
 import os
 import cv2 as cv
-from stereo_vision import config as CF
-from stereo_vision import config_user as CF_user
+import config as CF
+import config_user as CF_user
 import ctypes
 from ctypes import cdll, c_int, c_double, POINTER
-import stereo_vision.camera_calibration.image_calibration as img_cal
-from stereo_vision.tools.vision.src.processor import rotate_image, check_file_path, run_Gaussian_blur
+import camera_calibration.image_calibration as img_cal
+from tools.vision.src.processor import rotate_image, check_file_path, run_Gaussian_blur
 
 class DIC_user_config:
     def __init__(self):

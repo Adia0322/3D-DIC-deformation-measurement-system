@@ -1,7 +1,7 @@
 from enum import IntEnum
 import numpy as np
 from copy import deepcopy
-from stereo_vision.config_DIC import (
+from config_DIC import (
     DIC_config, DIC_Image, Img_Ref_Pt_Pos, 
     Stereo_DIC_Init_Param, Subset_Info, 
     Img_Grad_Info, Coarse_Search_Method, PSO_Config

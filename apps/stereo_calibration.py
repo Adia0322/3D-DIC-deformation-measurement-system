@@ -5,8 +5,8 @@ import numpy as np
 import cv2 as cv
 import glob
 import os
-from stereo_vision import config as CF
-from stereo_vision import config_user as CF_user
+import config as CF
+import config_user as CF_user
 
 os.makedirs(CF.BUILD_DIR, exist_ok=True)
 
