@@ -21,7 +21,7 @@ It is designed for:
 ## Example:
 Below shows displacement measurement of a **deformed rubber surface with speckle pattern**:
 ## How to run:
-* Enviroment  
+* Environment  
 > Windows 11  
 > MinGW GCC  
 > Python 3.13.3  
